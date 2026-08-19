@@ -2,9 +2,9 @@
 
 ### Software Quality Assurance Project ENSE707
 
-Christian Cantos  
-Jayden Marsh  
-Lorenz Soriano
+Christian Cantos 23188023  
+Jayden Marsh 23217931  
+Lorenz Soriano 18011129
 
 
 ## About
