@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="GymQ-ENSE707-SQA-MSTest/GymQ-ENSE707-SQA-MSTest.csproj" />
   <Project Path="GymQ-ENSE707-SQA-Project/GymQ-ENSE707-SQA-Project.csproj" />
 </Solution>
