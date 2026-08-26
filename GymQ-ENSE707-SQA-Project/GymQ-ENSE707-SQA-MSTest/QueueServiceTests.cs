@@ -271,5 +271,90 @@ namespace GymQ.Tests
             Assert.IsTrue(service.SendNudge("SquatRack1", "M001"));
             Assert.IsTrue(service.SendNudge("SquatRack2", "M001"));
         }
+
+        [TestMethod]
+        public void EnforceClaimTimeout_NotifiedMemberHasTimedOut_RemovesMember()
+        {
+            var service = new QueueService();
+            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.NotifyNextInQueue("SquatRack2");
+
+            var entry = GetQueueEntries(service, "SquatRack2")[0];
+            entry.NotifiedAt = DateTime.UtcNow.AddMinutes(-2);
+
+            service.EnforceClaimTimeout("SquatRack2", "M001");
+
+            Assert.IsNull(service.GetQueuePosition("SquatRack2", "M001"));
+        }
+
+        [TestMethod]
+        public void EnforceClaimTimeout_NotifiedMemberHasNotTimedOut_KeepsMemberInQueue()
+        {
+            var service = new QueueService();
+            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.NotifyNextInQueue("SquatRack2");
+
+            var entry = GetQueueEntries(service, "SquatRack2")[0];
+            entry.NotifiedAt = DateTime.UtcNow.AddMinutes(-1);
+
+            service.EnforceClaimTimeout("SquatRack2", "M001");
+
+            Assert.AreEqual(1, service.GetQueuePosition("SquatRack2", "M001"));
+        }
+
+        [TestMethod]
+        public void EnforceClaimTimeout_MemberWasNeverNotified_KeepsMemberInQueue()
+        {
+            var service = new QueueService();
+            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+
+            service.EnforceClaimTimeout("SquatRack2", "M001");
+
+            Assert.AreEqual(1, service.GetQueuePosition("SquatRack2", "M001"));
+        }
+
+        [TestMethod]
+        public void EnforceClaimTimeout_UnknownEquipment_DoesNothing()
+        {
+            var service = new QueueService();
+
+            service.EnforceClaimTimeout("UnknownEquipment", "M001");
+
+            Assert.IsNull(
+                service.GetQueuePosition("UnknownEquipment", "M001"));
+        }
+
+        [TestMethod]
+        public void EnforceClaimTimeout_MemberIsNotQueued_DoesNothing()
+        {
+            var service = new QueueService();
+            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+
+            service.EnforceClaimTimeout("SquatRack2", "M999");
+
+            Assert.AreEqual(1, service.GetQueuePosition("SquatRack2", "M001"));
+        }
+
+        [TestMethod]
+        public void EnforceClaimTimeout_TimedOutFrontMember_RemovesMemberAndNotifiesNext()
+        {
+            var service = new QueueService();
+
+            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M002", "Mia"));
+            service.NotifyNextInQueue("SquatRack2");
+
+            var entries = GetQueueEntries(service, "SquatRack2");
+            entries[0].NotifiedAt = DateTime.UtcNow.AddMinutes(-2).AddSeconds(-1);
+
+            service.EnforceClaimTimeout("SquatRack2", "M001");
+
+            entries = GetQueueEntries(service, "SquatRack2");
+
+            Assert.HasCount(1, entries);
+            Assert.AreEqual("M002", entries[0].MemberId);
+            Assert.IsTrue(entries[0].NotifiedAt.HasValue);
+        }
+
     }
 }   

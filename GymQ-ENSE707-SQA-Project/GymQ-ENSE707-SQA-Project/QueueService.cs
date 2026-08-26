@@ -199,7 +199,24 @@ namespace GymQ.QueueModule
             // 1. Check elapsed time since NotifiedAt >= 2 minutes
             // 2. If so, remove this member's QueueEntry from _queues[equipmentId]
             // 3. Call NotifyNextInQueue(equipmentId) to cascade to the next member
-            throw new NotImplementedException();
+            
+             if (!_queues.TryGetValue(equipmentId, out var queue))
+                return;
+
+            var entry = queue.FirstOrDefault(
+                queueEntry => queueEntry.MemberId == memberId);
+
+            if (entry == null || entry.NotifiedAt == null)
+                return;
+
+            var elapsed = DateTime.UtcNow - entry.NotifiedAt.Value;
+
+            if (elapsed < TimeSpan.FromMinutes(2))
+                return;
+
+            queue.Remove(entry);
+
+            NotifyNextInQueue(equipmentId);
         }
     }
 }
