@@ -23,6 +23,7 @@ namespace GymQ.QueueModule
         // In-memory store for the prototype. One list per equipment, keyed by EquipmentId.
         // TODO: replace with proper storage/repository if the project moves beyond prototype stage.
         private readonly Dictionary<string, List<QueueEntry>> _queues = new();
+        private readonly Dictionary<string, DateTime> _lastNudgeAt = new();
 
         /// <summary>
         /// FR-001: Adds a logged-in member to the queue for the given equipment
@@ -123,6 +124,8 @@ namespace GymQ.QueueModule
         /// <param name="equipmentId">The equipment in question.</param>
         /// <param name="fromMemberId">The member sending the nudge (must be next in queue).</param>
         /// <returns>True if the nudge was sent; false if blocked by cooldown.</returns>
+        /// 
+        
         public bool SendNudge(string equipmentId, string fromMemberId)
         {
             // TODO:
@@ -130,7 +133,37 @@ namespace GymQ.QueueModule
             // 2. Check cooldown (track last nudge time per equipmentId)
             // 3. If allowed, send notification to current user and start 1-minute response timer
             // 4. Return true/false based on whether the nudge was actually sent
-            throw new NotImplementedException();
+            
+             if (string.IsNullOrWhiteSpace(equipmentId) ||
+                string.IsNullOrWhiteSpace(fromMemberId))
+            {
+                return false;
+            }
+
+            if (!_queues.TryGetValue(equipmentId, out var queue) ||
+                queue.Count == 0)
+            {
+                return false;
+            }
+
+            if (queue[0].MemberId != fromMemberId)
+            {
+                return false;
+            }
+
+            var now = DateTime.UtcNow;
+
+            if (_lastNudgeAt.TryGetValue(equipmentId, out var lastNudgeAt) &&
+                now - lastNudgeAt < TimeSpan.FromMinutes(5))
+            {
+                return false;
+            }
+
+            _lastNudgeAt[equipmentId] = now;
+
+            // Notification and one-minute scheduling will be added later.
+            return true;
+
         }
 
         /// <summary>
@@ -146,7 +179,11 @@ namespace GymQ.QueueModule
             //    (this should call into Person C's SessionService.EndSession, reason = "Nudge")
             // 2. Then call NotifyNextInQueue(equipmentId)
             // 3. If stillUsing == true, do nothing further (session continues)
-            throw new NotImplementedException();
+            if (stillUsing)
+            {
+                return;
+            }
+
         }
 
         /// <summary>

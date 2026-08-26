@@ -199,5 +199,77 @@ namespace GymQ.Tests
 
             queues[equipmentId] = new List<QueueEntry>();
         }
+
+        [TestMethod]
+        public void SendNudge_NextMemberInQueue_ReturnsTrue()
+        {
+            var service = new QueueService();
+
+            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+
+            var result = service.SendNudge("SquatRack2", "M001");
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void SendNudge_MemberIsNotNextInQueue_ReturnsFalse()
+        {
+            var service = new QueueService();
+
+            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M002", "Mia"));
+
+            var result = service.SendNudge("SquatRack2", "M002");
+
+            Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        public void SendNudge_UnknownEquipment_ReturnsFalse()
+        {
+            var service = new QueueService();
+
+            var result = service.SendNudge("UnknownEquipment", "M001");
+
+            Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        public void SendNudge_EmptyQueue_ReturnsFalse()
+        {
+            var service = new QueueService();
+            AddEmptyQueue(service, "SquatRack2");
+
+            var result = service.SendNudge("SquatRack2", "M001");
+
+            Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        public void SendNudge_CooldownHasNotExpired_ReturnsFalse()
+        {
+            var service = new QueueService();
+
+            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+
+            Assert.IsTrue(service.SendNudge("SquatRack2", "M001"));
+
+            var result = service.SendNudge("SquatRack2", "M001");
+
+            Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        public void SendNudge_DifferentEquipment_CooldownsAreIndependent()
+        {
+            var service = new QueueService();
+
+            service.JoinQueue("SquatRack1", new Member("M001", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+
+            Assert.IsTrue(service.SendNudge("SquatRack1", "M001"));
+            Assert.IsTrue(service.SendNudge("SquatRack2", "M001"));
+        }
     }
 }   
