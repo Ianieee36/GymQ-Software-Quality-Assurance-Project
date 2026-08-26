@@ -1,6 +1,9 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using GymQ.Models;
 using GymQ.QueueModule;
+using System;
+using System.Collections.Generic;
+using System.Reflection;
 
 namespace GymQ.Tests
 {
@@ -120,5 +123,81 @@ namespace GymQ.Tests
             Assert.ThrowsExactly<ArgumentNullException>(
                 () => service.JoinQueue("SquatRack2", null!));
         }
+        // Additional tests for NotifyNextInQueue
+        [TestMethod]
+        public void NotifyNextInQueue_QueueHasMembers_SetsFrontMemberNotifiedAt()
+        {
+            var service = new QueueService();
+            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+
+            var before = DateTime.UtcNow;
+
+            service.NotifyNextInQueue("SquatRack2");
+
+            var after = DateTime.UtcNow;
+            var entry = GetQueueEntries(service, "SquatRack2")[0];
+
+            Assert.IsTrue(entry.NotifiedAt.HasValue);
+            Assert.IsTrue(entry.NotifiedAt.Value >= before);
+            Assert.IsTrue(entry.NotifiedAt.Value <= after);
+        }   
+
+        // Additional test to ensure that NotifyNextInQueue only notifies the front member in the queue
+        [TestMethod]
+        public void NotifyNextInQueue_QueueHasMultipleMembers_NotifiesOnlyFrontMember()
+        {
+            var service = new QueueService();
+            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M002", "Mia"));
+
+            service.NotifyNextInQueue("SquatRack2");
+
+            var entries = GetQueueEntries(service, "SquatRack2");
+
+            Assert.IsTrue(entries[0].NotifiedAt.HasValue);
+            Assert.IsNull(entries[1].NotifiedAt);
+        }
+
+        // Additional test to ensure that NotifyNextInQueue does not throw an exception when called on an empty queue
+        [TestMethod]
+        public void NotifyNextInQueue_UnknownEquipment_ReturnsSafely()
+        {
+            var service = new QueueService();
+
+            service.NotifyNextInQueue("UnknownEquipment");
+
+            Assert.IsNull(
+                service.GetQueuePosition("UnknownEquipment", "M001"));
+        }
+
+        // Helper method to access the private _queues field of QueueService
+
+        private static List<QueueEntry> GetQueueEntries(
+            QueueService service,
+            string equipmentId)
+        {
+            var queuesField = typeof(QueueService).GetField(
+                "_queues",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+
+            var queues = (Dictionary<string, List<QueueEntry>>)
+                queuesField!.GetValue(service)!;
+
+            return queues[equipmentId];
+        }
+
+        private static void AddEmptyQueue(
+            QueueService service,
+            string equipmentId)
+        {
+            var queuesField = typeof(QueueService).GetField(
+                "_queues",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+
+            var queues = (Dictionary<string, List<QueueEntry>>)
+                queuesField!.GetValue(service)!;
+
+            queues[equipmentId] = new List<QueueEntry>();
+        }
     }
-}
+}   

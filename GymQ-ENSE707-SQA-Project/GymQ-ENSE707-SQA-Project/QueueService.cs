@@ -98,7 +98,22 @@ namespace GymQ.QueueModule
             // 2. Set NotifiedAt = DateTime.UtcNow on that entry (used by EnforceClaimTimeout)
             // 3. Send an in-app notification to that member (notification mechanism TBD — stub for now)
             // 4. If queue is empty, equipment simply stays Available with no notification
-            throw new NotImplementedException();
+            
+            if (!_queues.TryGetValue(equipmentId, out var queue))
+                return;
+
+            if (queue.Count == 0)
+                return;
+
+            var nextMember = queue[0];
+
+            // Once the next member is notified, we record the time of notification.
+            if (nextMember.NotifiedAt == null)
+            {
+                nextMember.NotifiedAt = DateTime.UtcNow;
+            }
+            // Notification mechanism will be integrated later.
+
         }
 
         /// <summary>
