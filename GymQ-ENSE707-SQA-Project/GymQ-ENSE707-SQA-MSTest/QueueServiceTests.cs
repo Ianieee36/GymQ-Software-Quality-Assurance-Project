@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using GymQ.Models;
 using GymQ.QueueModule;
+using GymQ.SessionModule;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -10,6 +11,8 @@ namespace GymQ.Tests
     [TestClass]
     public class QueueServiceTests
     {
+
+        // Tests for JoinQueue and GetQueuePosition
         [TestMethod]
         public void JoinQueue_FirstMember_ReturnsPositionOne()
         {
@@ -354,6 +357,35 @@ namespace GymQ.Tests
             Assert.HasCount(1, entries);
             Assert.AreEqual("M002", entries[0].MemberId);
             Assert.IsTrue(entries[0].NotifiedAt.HasValue);
+        }
+
+        [TestMethod]
+        public void HandleNudgeResponse_Finished_EndsSessionAndMakesEquipmentAvailable()
+        {
+            var equipment = new Equipment("SquatRack2", "Squat Rack #2");
+
+            var equipmentStore = new Dictionary<string, Equipment>
+            {
+                [equipment.EquipmentId] = equipment
+            };
+
+            var sessionService = new SessionService(equipmentStore);
+
+            sessionService.StartSession("SquatRack2", "M001");
+
+            var queueService = new QueueService(sessionService);
+
+            queueService.JoinQueue(
+                "SquatRack2",
+                new Member("M002", "Mia"));
+
+            queueService.HandleNudgeResponse(
+                "SquatRack2",
+                false);
+
+            Assert.AreEqual(
+                EquipmentStatus.Available,
+                equipment.Status);
         }
 
     }

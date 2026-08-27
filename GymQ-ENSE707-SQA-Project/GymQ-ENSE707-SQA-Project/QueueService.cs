@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using GymQ.Models;
+using GymQ.SessionModule;
 
 namespace GymQ.QueueModule
 {
@@ -25,6 +26,17 @@ namespace GymQ.QueueModule
         private readonly Dictionary<string, List<QueueEntry>> _queues = new();
         private readonly Dictionary<string, DateTime> _lastNudgeAt = new();
 
+        private readonly SessionService _sessionService;
+
+        public QueueService()
+        {
+            
+        }
+
+        public QueueService(SessionService sessionService)
+        {
+            _sessionService = sessionService;
+        }
         /// <summary>
         /// FR-001: Adds a logged-in member to the queue for the given equipment
         /// and returns their position (1 = front of queue).
@@ -179,11 +191,16 @@ namespace GymQ.QueueModule
             //    (this should call into Person C's SessionService.EndSession, reason = "Nudge")
             // 2. Then call NotifyNextInQueue(equipmentId)
             // 3. If stillUsing == true, do nothing further (session continues)
-            if (stillUsing)
+           if (stillUsing)
             {
                 return;
             }
 
+            _sessionService?.EndSession(
+                equipmentId,
+                SessionEndReason.NudgeResponse);
+
+            NotifyNextInQueue(equipmentId);
         }
 
         /// <summary>
