@@ -23,6 +23,7 @@ namespace GymQ.QueueModule
         // In-memory store for the prototype. One list per equipment, keyed by EquipmentId.
         // TODO: replace with proper storage/repository if the project moves beyond prototype stage.
         private readonly Dictionary<string, List<QueueEntry>> _queues = new();
+        private readonly Dictionary<string, DateTime> _lastNudgeAt = new();
 
         /// <summary>
         /// FR-001: Adds a logged-in member to the queue for the given equipment
@@ -38,7 +39,32 @@ namespace GymQ.QueueModule
             // 2. Validate member is not already in this equipment's queue (avoid duplicate entries)
             // 3. Create a new QueueEntry and add it to _queues[equipmentId]
             // 4. Return the member's 1-based position in the queue
-            throw new NotImplementedException();
+
+            if (string.IsNullOrWhiteSpace(equipmentId))
+                throw new ArgumentException("Equipment ID is required.", nameof(equipmentId));
+
+            if (member == null)
+                throw new ArgumentNullException(nameof(member));
+
+            if (!_queues.ContainsKey(equipmentId))
+            {
+                _queues[equipmentId] = new List<QueueEntry>();
+            }
+
+            var queue = _queues[equipmentId];
+
+            bool alreadyQueued = queue.Any(entry => entry.MemberId == member.MemberId);
+
+            if (alreadyQueued)
+            {
+                throw new InvalidOperationException("Member is already in this equipment queue.");
+            }
+
+            var entry = new QueueEntry(equipmentId, member.MemberId);
+
+            queue.Add(entry);
+
+            return queue.Count;
         }
 
         /// <summary>
@@ -48,7 +74,17 @@ namespace GymQ.QueueModule
         public int? GetQueuePosition(string equipmentId, string memberId)
         {
             // TODO: look up _queues[equipmentId], find the member's index, return index + 1
-            throw new NotImplementedException();
+            
+            if (!_queues.TryGetValue(equipmentId, out var queue))
+                return null;
+
+            int index = queue.FindIndex(entry => entry.MemberId == memberId);
+
+            if (index == -1)
+                return null;
+
+            return index + 1;
+
         }
 
         /// <summary>
@@ -63,7 +99,22 @@ namespace GymQ.QueueModule
             // 2. Set NotifiedAt = DateTime.UtcNow on that entry (used by EnforceClaimTimeout)
             // 3. Send an in-app notification to that member (notification mechanism TBD — stub for now)
             // 4. If queue is empty, equipment simply stays Available with no notification
-            throw new NotImplementedException();
+            
+            if (!_queues.TryGetValue(equipmentId, out var queue))
+                return;
+
+            if (queue.Count == 0)
+                return;
+
+            var nextMember = queue[0];
+
+            // Once the next member is notified, we record the time of notification.
+            if (nextMember.NotifiedAt == null)
+            {
+                nextMember.NotifiedAt = DateTime.UtcNow;
+            }
+            // Notification mechanism will be integrated later.
+
         }
 
         /// <summary>
@@ -73,6 +124,8 @@ namespace GymQ.QueueModule
         /// <param name="equipmentId">The equipment in question.</param>
         /// <param name="fromMemberId">The member sending the nudge (must be next in queue).</param>
         /// <returns>True if the nudge was sent; false if blocked by cooldown.</returns>
+        /// 
+        
         public bool SendNudge(string equipmentId, string fromMemberId)
         {
             // TODO:
@@ -80,7 +133,37 @@ namespace GymQ.QueueModule
             // 2. Check cooldown (track last nudge time per equipmentId)
             // 3. If allowed, send notification to current user and start 1-minute response timer
             // 4. Return true/false based on whether the nudge was actually sent
-            throw new NotImplementedException();
+            
+             if (string.IsNullOrWhiteSpace(equipmentId) ||
+                string.IsNullOrWhiteSpace(fromMemberId))
+            {
+                return false;
+            }
+
+            if (!_queues.TryGetValue(equipmentId, out var queue) ||
+                queue.Count == 0)
+            {
+                return false;
+            }
+
+            if (queue[0].MemberId != fromMemberId)
+            {
+                return false;
+            }
+
+            var now = DateTime.UtcNow;
+
+            if (_lastNudgeAt.TryGetValue(equipmentId, out var lastNudgeAt) &&
+                now - lastNudgeAt < TimeSpan.FromMinutes(5))
+            {
+                return false;
+            }
+
+            _lastNudgeAt[equipmentId] = now;
+
+            // Notification and one-minute scheduling will be added later.
+            return true;
+
         }
 
         /// <summary>
@@ -96,7 +179,11 @@ namespace GymQ.QueueModule
             //    (this should call into Person C's SessionService.EndSession, reason = "Nudge")
             // 2. Then call NotifyNextInQueue(equipmentId)
             // 3. If stillUsing == true, do nothing further (session continues)
-            throw new NotImplementedException();
+            if (stillUsing)
+            {
+                return;
+            }
+
         }
 
         /// <summary>
@@ -112,7 +199,24 @@ namespace GymQ.QueueModule
             // 1. Check elapsed time since NotifiedAt >= 2 minutes
             // 2. If so, remove this member's QueueEntry from _queues[equipmentId]
             // 3. Call NotifyNextInQueue(equipmentId) to cascade to the next member
-            throw new NotImplementedException();
+            
+             if (!_queues.TryGetValue(equipmentId, out var queue))
+                return;
+
+            var entry = queue.FirstOrDefault(
+                queueEntry => queueEntry.MemberId == memberId);
+
+            if (entry == null || entry.NotifiedAt == null)
+                return;
+
+            var elapsed = DateTime.UtcNow - entry.NotifiedAt.Value;
+
+            if (elapsed < TimeSpan.FromMinutes(2))
+                return;
+
+            queue.Remove(entry);
+
+            NotifyNextInQueue(equipmentId);
         }
     }
 }
