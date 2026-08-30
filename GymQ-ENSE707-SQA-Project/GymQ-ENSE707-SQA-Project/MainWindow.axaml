@@ -1,85 +1,883 @@
-﻿<Window xmlns="https://github.com/avaloniaui"
+<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="GymQ_ENSE707_SQA_Project.MainWindow"
-        Title="GymQ Project"
-        Width="820" Height="620">
+        Title="GymQ"
+        Width="393"
+        Height="852"
+        MinWidth="393"
+        MaxWidth="393"
+        MinHeight="852"
+        MaxHeight="852"
+        CanResize="False"
+        Background="#090B0E">
 
-    <Grid RowDefinitions="Auto,*" Margin="20">
+    <Window.Styles>
 
-        <!-- Header -->
-        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,15">
-            <TextBlock Grid.Column="0"
-                       Text="GymQ - Machines"
-                       FontSize="24" FontWeight="Bold"
-                       VerticalAlignment="Center"/>
-            <Button Grid.Column="1"
-                    Name="ToggleStaffButton"
-                    Content="Staff View"/>
-        </Grid>
+        <!-- ========================================================= -->
+        <!-- GLOBAL BUTTONS -->
+        <!-- ========================================================= -->
 
-        <!-- Body -->
-        <Grid Grid.Row="1" ColumnDefinitions="300,*">
+        <Style Selector="Button">
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="16,13"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
 
-            <!-- Equipment list (left column) -->
-            <ListBox Grid.Column="0"
-                     Name="EquipmentListBox"
-                     Width="280"
-                     Height="200"
-                     HorizontalAlignment="Left"
-                     VerticalAlignment="Top"/>
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="#E51D3F"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
 
-            <!-- Right column: member view + staff view stacked -->
-            <StackPanel Grid.Column="1" Margin="20,0,0,0" Spacing="15">
+        <Style Selector="Button.secondary">
+            <Setter Property="Background" Value="#24282E"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#4B515A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
 
-                <!-- Machine details (member view) -->
-                <StackPanel Spacing="6">
-                    <TextBlock Text="Machine Details" FontSize="18" FontWeight="Bold"/>
-                    <Grid ColumnDefinitions="100,*" RowDefinitions="Auto,Auto,Auto">
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Name:"/>
-                        <TextBlock Grid.Row="0" Grid.Column="1" Name="NameText"/>
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Status:"/>
-                        <TextBlock Grid.Row="1" Grid.Column="1" Name="StatusText"/>
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="In Queue:"/>
-                        <TextBlock Grid.Row="2" Grid.Column="1" Name="QueueCountText"/>
-                    </Grid>
-                </StackPanel>
+        <Style Selector="Button.dangerGhost">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#EF4765"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
 
-                <Button Name="JoinQueueButton" Content="Join Queue" HorizontalAlignment="Left"/>
+        <Style Selector="Button.nav">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#9298A1"/>
+            <Setter Property="Padding" Value="7"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="FontSize" Value="11"/>
+        </Style>
 
-                <Separator/>
+        <Style Selector="Button.navSelected">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#E51D3F"/>
+            <Setter Property="Padding" Value="7"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="FontSize" Value="11"/>
+        </Style>
 
-                <Button Name="ToggleReportButton" Content="Report an Issue" HorizontalAlignment="Left"/>
+        <!-- ========================================================= -->
+        <!-- CARDS -->
+        <!-- ========================================================= -->
 
-                <!-- Report panel (collapsed by default) -->
-                <StackPanel Name="ReportPanel" IsVisible="False" Spacing="8">
-                    <TextBlock Text="Report an Issue" FontSize="16" FontWeight="Bold"/>
-                    <TextBox Name="ReportDescriptionBox"
-                             Watermark="Describe the problem"
-                             AcceptsReturn="True"
-                             Height="80"/>
-                    <Button Name="ReportButton" Content="Submit Report" HorizontalAlignment="Left"/>
-                    <TextBlock Name="ReportResultText" Foreground="OrangeRed"/>
-                </StackPanel>
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="#15181D"/>
+            <Setter Property="BorderBrush" Value="#2B3038"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Padding" Value="16"/>
+        </Style>
 
-                <Separator/>
+        <Style Selector="TextBlock.title">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="28"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
 
-                <StackPanel Spacing="4">
-                    <TextBlock Text="Messages" FontSize="16" FontWeight="Bold"/>
-                    <TextBlock Name="MessageText" TextWrapping="Wrap"/>
-                </StackPanel>
+        <Style Selector="TextBlock.sectionTitle">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
 
-                <!-- Staff panel (collapsed by default) -->
-                <StackPanel Name="StaffPanel" IsVisible="False" Spacing="8">
-                    <TextBlock Text="Staff - Pending Reports" FontSize="18" FontWeight="Bold"/>
-                    <ListBox Name="PendingReportsListBox" Height="150"/>
-                    <TextBlock Name="PendingReportDetailsText" TextWrapping="Wrap"/>
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                        <Button Name="ConfirmReportButton" Content="Confirm" IsEnabled="False"/>
-                        <Button Name="RejectReportButton" Content="Reject" IsEnabled="False"/>
+        <Style Selector="TextBlock.label">
+            <Setter Property="Foreground" Value="#979EA8"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <Style Selector="TextBlock.value">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style Selector="TextBlock.muted">
+            <Setter Property="Foreground" Value="#A0A6AF"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="#1B1F24"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#343A43"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="12"/>
+        </Style>
+
+        <Style Selector="ListBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <Style Selector="ListBoxItem">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="12"/>
+        </Style>
+
+    </Window.Styles>
+
+    <!-- ============================================================= -->
+    <!-- ROOT -->
+    <!-- ============================================================= -->
+
+    <Grid>
+
+        <!-- ========================================================= -->
+        <!-- APPLICATION SHELL -->
+        <!-- ========================================================= -->
+
+        <Grid Name="ShellGrid"
+              RowDefinitions="*,Auto,64">
+
+            <!-- ===================================================== -->
+            <!-- SCREEN HOST -->
+            <!-- ===================================================== -->
+
+            <Grid Grid.Row="0">
+
+                <!-- ================================================= -->
+                <!-- 1. EQUIPMENT DASHBOARD -->
+                <!-- ================================================= -->
+
+                <ScrollViewer Name="DashboardView"
+                              VerticalScrollBarVisibility="Auto">
+
+                    <StackPanel Margin="20,20,20,24"
+                                Spacing="18">
+
+                        <!-- User / brand header -->
+                        <Grid ColumnDefinitions="*,Auto">
+
+                            <StackPanel Grid.Column="0"
+                                        Spacing="2">
+
+                                <TextBlock Text="Lorenz Soriano"
+                                           Foreground="#D6D9DE"
+                                           FontSize="12"/>
+
+                                <StackPanel Orientation="Horizontal"
+                                            Spacing="8">
+
+                                    <TextBlock Text="jetts"
+                                               Foreground="#00BFAE"
+                                               FontSize="27"
+                                               FontWeight="Bold"/>
+
+                                    <TextBlock Text="GymQ"
+                                               Foreground="White"
+                                               FontSize="27"
+                                               FontWeight="Bold"/>
+
+                                </StackPanel>
+
+                                <TextBlock Text="Botany Junction Club"
+                                           Foreground="#B0B5BD"
+                                           FontSize="15"/>
+
+                                <TextBlock Text="✓ Checked in"
+                                           Foreground="#39C981"
+                                           FontSize="12"
+                                           Margin="0,3,0,0"/>
+
+                            </StackPanel>
+
+                            <Button Grid.Column="1"
+                                    Name="OpenStaffButton"
+                                    Content="Staff"
+                                    Classes="secondary"
+                                    VerticalAlignment="Top"
+                                    Padding="14,10"/>
+
+                        </Grid>
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Text="Equipment"
+                                       Classes="title"/>
+
+                            <TextBlock Text="Live machine availability and queues"
+                                       Classes="muted"/>
+                        </StackPanel>
+
+                        <!-- Equipment cards generated by code-behind -->
+                        <StackPanel Name="EquipmentCardsPanel"
+                                    Spacing="10"/>
+
                     </StackPanel>
+
+                </ScrollViewer>
+
+
+                <!-- ================================================= -->
+                <!-- 2. EQUIPMENT DETAIL -->
+                <!-- ================================================= -->
+
+                <ScrollViewer Name="EquipmentDetailView"
+                              IsVisible="False"
+                              VerticalScrollBarVisibility="Auto">
+
+                    <StackPanel Margin="20"
+                                Spacing="18">
+
+                        <Button Name="DetailBackButton"
+                                Content="‹  Equipment"
+                                Classes="dangerGhost"
+                                HorizontalAlignment="Left"
+                                Padding="0,8"/>
+
+                        <StackPanel Spacing="5">
+
+                            <TextBlock Name="DetailEquipmentNameText"
+                                       Text="Equipment"
+                                       Classes="title"/>
+
+                            <TextBlock Name="DetailEquipmentIdText"
+                                       Classes="muted"/>
+
+                        </StackPanel>
+
+                        <Border Classes="card">
+
+                            <StackPanel Spacing="16">
+
+                                <TextBlock Text="Machine status"
+                                           Classes="sectionTitle"/>
+
+                                <Grid ColumnDefinitions="115,*"
+                                      RowDefinitions="Auto,Auto,Auto">
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Status"
+                                               Classes="label"
+                                               Margin="0,0,0,10"/>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="1"
+                                               Name="DetailStatusText"
+                                               Classes="value"
+                                               Margin="0,0,0,10"/>
+
+                                    <TextBlock Grid.Row="1"
+                                               Grid.Column="0"
+                                               Text="Your position"
+                                               Classes="label"
+                                               Margin="0,0,0,10"/>
+
+                                    <TextBlock Grid.Row="1"
+                                               Grid.Column="1"
+                                               Name="DetailQueuePositionText"
+                                               Classes="value"
+                                               Margin="0,0,0,10"/>
+
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Session"
+                                               Classes="label"/>
+
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="1"
+                                               Name="DetailSessionText"
+                                               Classes="value"/>
+
+                                </Grid>
+
+                                <Button Name="StartSessionButton"
+                                        Content="START SESSION"
+                                        Classes="primary"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Center"/>
+
+                                <Button Name="JoinQueueButton"
+                                        Content="JOIN QUEUE"
+                                        Classes="primary"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Center"/>
+
+                                <Button Name="ViewQueueButton"
+                                        Content="VIEW QUEUE"
+                                        Classes="secondary"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Center"
+                                        IsVisible="False"/>
+
+                                <Button Name="OpenReportButton"
+                                        Content="Report an Issue"
+                                        Classes="dangerGhost"
+                                        HorizontalAlignment="Center"/>
+
+                            </StackPanel>
+
+                        </Border>
+
+                    </StackPanel>
+
+                </ScrollViewer>
+
+
+                <!-- ================================================= -->
+                <!-- 3. WAITING IN QUEUE -->
+                <!-- ================================================= -->
+
+                <ScrollViewer Name="QueueView"
+                              IsVisible="False"
+                              VerticalScrollBarVisibility="Auto">
+
+                    <StackPanel Margin="20"
+                                Spacing="18">
+
+                        <Button Name="QueueBackButton"
+                                Content="‹  Equipment"
+                                Classes="dangerGhost"
+                                HorizontalAlignment="Left"
+                                Padding="0,8"/>
+
+                        <TextBlock Text="Waiting in Queue"
+                                   HorizontalAlignment="Center"
+                                   Classes="sectionTitle"/>
+
+                        <Border Classes="card">
+
+                            <StackPanel Spacing="18">
+
+                                <TextBlock Name="QueueEquipmentNameText"
+                                           Text="Squat Rack #2"
+                                           HorizontalAlignment="Center"
+                                           TextAlignment="Center"
+                                           Foreground="White"
+                                           FontSize="24"
+                                           FontWeight="Bold"/>
+
+                                <Border Height="1"
+                                        Background="#343940"/>
+
+                                <StackPanel Spacing="4"
+                                            HorizontalAlignment="Center">
+
+                                    <TextBlock Name="QueuePositionHeadlineText"
+                                               Text="You're next"
+                                               Foreground="White"
+                                               FontSize="20"
+                                               FontWeight="Bold"
+                                               HorizontalAlignment="Center"/>
+
+                                    <TextBlock Name="QueuePositionSubText"
+                                               Text="Position #1"
+                                               Foreground="#A5ABB4"
+                                               HorizontalAlignment="Center"/>
+
+                                </StackPanel>
+
+                                <Border Height="1"
+                                        Background="#343940"/>
+
+                                <StackPanel Spacing="6">
+
+                                    <TextBlock Text="Equipment status"
+                                               Classes="label"/>
+
+                                    <TextBlock Name="QueueEquipmentStatusText"
+                                               Text="In Use"
+                                               Classes="value"/>
+
+                                </StackPanel>
+
+                                <Button Name="NudgeButton"
+                                        Content="🔔  NUDGE CURRENT USER"
+                                        Classes="secondary"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Center"/>
+
+                                <TextBlock Text="Nudges are limited to once every 5 minutes."
+                                           Classes="muted"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Center"/>
+
+                            </StackPanel>
+
+                        </Border>
+
+                    </StackPanel>
+
+                </ScrollViewer>
+
+
+                <!-- ================================================= -->
+                <!-- 4. ACTIVE SESSION -->
+                <!-- ================================================= -->
+
+                <ScrollViewer Name="ActiveSessionView"
+                              IsVisible="False"
+                              VerticalScrollBarVisibility="Auto">
+
+                    <StackPanel Margin="20"
+                                Spacing="20">
+
+                        <TextBlock Name="ActiveSessionHeaderText"
+                                   Text="Using Equipment"
+                                   HorizontalAlignment="Center"
+                                   Foreground="#D2D5DA"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"/>
+
+                        <StackPanel Margin="0,60,0,0"
+                                    Spacing="16"
+                                    HorizontalAlignment="Stretch">
+
+                            <TextBlock Text="You’re using"
+                                       HorizontalAlignment="Center"
+                                       Foreground="White"
+                                       FontSize="26"
+                                       FontWeight="Bold"/>
+
+                            <TextBlock Name="ActiveEquipmentNameText"
+                                       Text="Treadmill #1"
+                                       HorizontalAlignment="Center"
+                                       Foreground="White"
+                                       FontSize="30"
+                                       FontWeight="Bold"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap"/>
+
+                            <TextBlock Name="SessionDurationText"
+                                       Text="Session duration: 00:00"
+                                       HorizontalAlignment="Center"
+                                       Foreground="#D1D5DB"
+                                       FontSize="18"/>
+
+                            <TextBlock Text="Session limit: 30 minutes"
+                                       HorizontalAlignment="Center"
+                                       Classes="muted"/>
+
+                        </StackPanel>
+
+                        <Button Name="EndSessionButton"
+                                Content="END SESSION"
+                                Classes="primary"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                Margin="0,35,0,0"/>
+
+                        <TextBlock Text="Finished? End your session so the next member can use the equipment."
+                                   Classes="muted"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"/>
+
+                        <Button Name="SessionReportButton"
+                                Content="Report Issue"
+                                Classes="dangerGhost"
+                                HorizontalAlignment="Center"/>
+
+                    </StackPanel>
+
+                </ScrollViewer>
+
+
+                <!-- ================================================= -->
+                <!-- 5. REPORT ISSUE -->
+                <!-- ================================================= -->
+
+                <ScrollViewer Name="ReportView"
+                              IsVisible="False"
+                              VerticalScrollBarVisibility="Auto">
+
+                    <StackPanel Margin="20"
+                                Spacing="18">
+
+                        <Button Name="ReportBackButton"
+                                Content="‹  Back"
+                                Classes="dangerGhost"
+                                HorizontalAlignment="Left"
+                                Padding="0,8"/>
+
+                        <TextBlock Text="Report an issue"
+                                   Classes="title"/>
+
+                        <Border Classes="card">
+
+                            <StackPanel Spacing="12">
+
+                                <TextBlock Text="Equipment"
+                                           Classes="label"/>
+
+                                <TextBlock Name="ReportEquipmentNameText"
+                                           Text="Equipment"
+                                           Foreground="White"
+                                           FontSize="20"
+                                           FontWeight="Bold"/>
+
+                            </StackPanel>
+
+                        </Border>
+
+                        <Border Classes="card">
+
+                            <StackPanel Spacing="10">
+
+                                <TextBlock Text="Describe the problem"
+                                           Foreground="White"
+                                           FontSize="16"
+                                           FontWeight="SemiBold"/>
+
+                                <TextBox Name="ReportDescriptionBox"
+                                         Watermark="e.g. machine feels unbalanced, unusual noise, loose or broken part"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         Height="170"/>
+
+                            </StackPanel>
+
+                        </Border>
+
+                        <Button Name="SubmitReportButton"
+                                Content="SUBMIT REPORT"
+                                Classes="primary"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"/>
+
+                    </StackPanel>
+
+                </ScrollViewer>
+
+
+                <!-- ================================================= -->
+                <!-- 6. REPORT SUCCESS -->
+                <!-- ================================================= -->
+
+                <Grid Name="ReportSuccessView"
+                      IsVisible="False">
+
+                    <StackPanel Margin="30"
+                                VerticalAlignment="Center"
+                                Spacing="24">
+
+                        <Border Width="100"
+                                Height="100"
+                                CornerRadius="50"
+                                BorderBrush="#31C875"
+                                BorderThickness="4"
+                                HorizontalAlignment="Center">
+
+                            <TextBlock Text="✓"
+                                       Foreground="#31C875"
+                                       FontSize="54"
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+
+                        </Border>
+
+                        <TextBlock Text="Report submitted"
+                                   Foreground="White"
+                                   FontSize="30"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Center"/>
+
+                        <TextBlock Text="Your report has been sent to gym staff for review."
+                                   Foreground="#D1D5DB"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   FontSize="16"/>
+
+                        <TextBlock Text="Thank you for helping keep the equipment in great condition."
+                                   Classes="muted"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"/>
+
+                        <Button Name="ReportDoneButton"
+                                Content="DONE"
+                                Classes="primary"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                Margin="0,20,0,0"/>
+
+                    </StackPanel>
+
+                </Grid>
+
+
+                <!-- ================================================= -->
+                <!-- 7. STAFF VIEW -->
+                <!-- ================================================= -->
+
+                <ScrollViewer Name="StaffView"
+                              IsVisible="False"
+                              VerticalScrollBarVisibility="Auto">
+
+                    <StackPanel Margin="20"
+                                Spacing="18">
+
+                        <Grid ColumnDefinitions="*,Auto">
+
+                            <StackPanel>
+
+                                <StackPanel Orientation="Horizontal"
+                                            Spacing="8">
+
+                                    <TextBlock Text="jetts"
+                                               Foreground="#00BFAE"
+                                               FontSize="27"
+                                               FontWeight="Bold"/>
+
+                                    <TextBlock Text="GymQ"
+                                               Foreground="White"
+                                               FontSize="27"
+                                               FontWeight="Bold"/>
+
+                                </StackPanel>
+
+                                <TextBlock Text="Staff dashboard"
+                                           Classes="muted"/>
+
+                            </StackPanel>
+
+                            <Button Grid.Column="1"
+                                    Name="ExitStaffButton"
+                                    Content="Exit Staff"
+                                    Classes="secondary"/>
+
+                        </Grid>
+
+                        <Border Classes="card">
+
+                            <StackPanel Spacing="12">
+
+                                <TextBlock Text="Equipment Status"
+                                           Classes="sectionTitle"/>
+
+                                <StackPanel Name="StaffEquipmentPanel"
+                                            Spacing="8"/>
+
+                            </StackPanel>
+
+                        </Border>
+
+                        <Border Classes="card">
+
+                            <StackPanel Spacing="14">
+
+                                <TextBlock Text="Pending Reports"
+                                           Classes="sectionTitle"/>
+
+                                <ListBox Name="PendingReportsListBox"
+                                         MinHeight="100"
+                                         MaxHeight="190"/>
+
+                                <TextBlock Name="PendingReportDetailsText"
+                                           Foreground="#D0D4DA"
+                                           TextWrapping="Wrap"/>
+
+                                <Grid ColumnDefinitions="*,*">
+
+                                    <Button Grid.Column="0"
+                                            Name="ConfirmReportButton"
+                                            Content="CONFIRM"
+                                            Classes="primary"
+                                            Margin="0,0,5,0"
+                                            IsEnabled="False"/>
+
+                                    <Button Grid.Column="1"
+                                            Name="RejectReportButton"
+                                            Content="REJECT"
+                                            Classes="secondary"
+                                            Margin="5,0,0,0"
+                                            IsEnabled="False"/>
+
+                                </Grid>
+
+                            </StackPanel>
+
+                        </Border>
+
+                    </StackPanel>
+
+                </ScrollViewer>
+
+            </Grid>
+
+
+            <!-- ===================================================== -->
+            <!-- GLOBAL MESSAGE BAR -->
+            <!-- ===================================================== -->
+
+            <Border Grid.Row="1"
+                    Name="MessageBar"
+                    IsVisible="False"
+                    Background="#1B1F24"
+                    BorderBrush="#303640"
+                    BorderThickness="1,1,1,0"
+                    Padding="14,8">
+
+                <TextBlock Name="GlobalMessageText"
+                           Foreground="#E3E5E8"
+                           FontSize="12"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"/>
+
+            </Border>
+
+
+            <!-- ===================================================== -->
+            <!-- BOTTOM NAV -->
+            <!-- ===================================================== -->
+
+            <Border Grid.Row="2"
+                    Name="BottomNavigation"
+                    Background="#191C20"
+                    BorderBrush="#2A2E34"
+                    BorderThickness="0,1,0,0">
+
+                <Grid ColumnDefinitions="*,*,*,*"
+                      Margin="6,3">
+
+                    <Button Grid.Column="0"
+                            Name="HomeNavButton"
+                            Classes="nav"
+                            Content="⌂&#10;Home"/>
+
+                    <Button Grid.Column="1"
+                            Name="ClubsNavButton"
+                            Classes="nav"
+                            Content="◉&#10;Clubs"/>
+
+                    <Button Grid.Column="2"
+                            Name="EquipmentNavButton"
+                            Classes="navSelected"
+                            Content="●&#10;Equipment"/>
+
+                    <Button Grid.Column="3"
+                            Name="ProfileNavButton"
+                            Classes="nav"
+                            Content="♙&#10;Profile"/>
+
+                </Grid>
+
+            </Border>
+
+        </Grid>
+
+
+        <!-- ========================================================= -->
+        <!-- CLAIM OVERLAY -->
+        <!-- ========================================================= -->
+
+        <Grid Name="ClaimOverlay"
+              IsVisible="False"
+              Background="#CC000000">
+
+            <Border Width="335"
+                    Padding="22"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Background="#171A1F"
+                    BorderBrush="#E51D3F"
+                    BorderThickness="2"
+                    CornerRadius="20">
+
+                <StackPanel Spacing="17">
+
+                    <TextBlock Text="YOUR TURN"
+                               Foreground="#F13D5D"
+                               FontSize="30"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center"/>
+
+                    <TextBlock Name="ClaimEquipmentNameText"
+                               Text="Equipment is ready"
+                               Foreground="White"
+                               FontSize="22"
+                               FontWeight="Bold"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"/>
+
+                    <TextBlock Text="You have 2 minutes to claim the equipment before it is offered to the next member."
+                               Foreground="#D5D8DD"
+                               FontSize="14"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"/>
+
+                    <Button Name="ClaimMachineButton"
+                            Content="CLAIM MACHINE"
+                            Classes="primary"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"/>
+
+                    <TextBlock Name="ClaimCountdownText"
+                               Text="Claim expires in 02:00"
+                               Foreground="#BFC3C9"
+                               FontSize="14"
+                               HorizontalAlignment="Center"/>
+
                 </StackPanel>
 
-            </StackPanel>
+            </Border>
+
         </Grid>
+
+
+        <!-- ========================================================= -->
+        <!-- NUDGE OVERLAY -->
+        <!-- ========================================================= -->
+
+        <Grid Name="NudgeOverlay"
+              IsVisible="False"
+              Background="#CC000000">
+
+            <Border Width="335"
+                    Padding="22"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Background="#171A1F"
+                    BorderBrush="#3B4048"
+                    BorderThickness="1"
+                    CornerRadius="20">
+
+                <StackPanel Spacing="17">
+
+                    <TextBlock Text="🔔"
+                               FontSize="36"
+                               HorizontalAlignment="Center"/>
+
+                    <TextBlock Name="NudgeEquipmentNameText"
+                               Text="Still using this equipment?"
+                               Foreground="White"
+                               FontSize="24"
+                               FontWeight="Bold"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"/>
+
+                    <TextBlock Text="The next member in the queue has indicated that the equipment may be available."
+                               Foreground="#D1D5DB"
+                               FontSize="14"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"/>
+
+                    <Button Name="StillUsingButton"
+                            Content="YES, I’M STILL USING IT"
+                            Classes="primary"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"/>
+
+                    <Button Name="FinishFromNudgeButton"
+                            Content="END MY SESSION"
+                            Classes="secondary"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"/>
+
+                    <TextBlock Text="Please respond within 60 seconds."
+                               Foreground="#E05A70"
+                               FontSize="13"
+                               HorizontalAlignment="Center"/>
+
+                </StackPanel>
+
+            </Border>
+
+        </Grid>
+
     </Grid>
+
 </Window>
