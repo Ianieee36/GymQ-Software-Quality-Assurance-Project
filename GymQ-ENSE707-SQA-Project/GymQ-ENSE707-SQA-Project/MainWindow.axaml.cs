@@ -273,6 +273,6 @@ public partial class MainWindow : Window
     {
         private readonly List<Equipment> _list;
         public LocalEquipmentRepository(List<Equipment> list) => _list = list;
-        public Equipment GetById(string equipmentId) => _list.FirstOrDefault(e => e.EquipmentId == equipmentId);
+        public Equipment? GetById(string equipmentId) => _list.FirstOrDefault(e => e.EquipmentId == equipmentId);
     }
 }
