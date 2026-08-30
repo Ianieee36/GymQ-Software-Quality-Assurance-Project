@@ -4,9 +4,9 @@ using GymQ.Models;
 
 namespace GymQ.FaultModule
 {
-    /// Status of a fault report as it moves through staff review.
-    /// Pending -> Confirmed (becomes a formal maintenance report, FR-007)
-    /// Pending -> Rejected (not a valid fault, no equipment status change)
+    // Status of a fault report as it moves through staff review.
+    // Pending -> Confirmed (becomes a formal maintenance report, FR-007)
+    // Pending -> Rejected (not a valid fault, no equipment status change)
     public enum FaultReportStatus
     {
         Pending,
@@ -14,7 +14,7 @@ namespace GymQ.FaultModule
         Rejected
     }
 
-    /// Represents a single fault report submitted by a member and reviewed by staff.
+    // Represents a single fault report submitted by a member and reviewed by staff.
     public class FaultReport
     {
         public string ReportId { get; set; }
@@ -29,27 +29,40 @@ namespace GymQ.FaultModule
         public DateTime? ReviewedAt { get; set; }
     }
 
+    // Testable interface for Equipment repository
+    public interface IEquipmentRepository
+    {
+        Equipment GetById(string equipmentId);
+    }
 
 
-    /// PERSON B — Fault Reporting & Maintenance Module
-    /// Covers FR-005, FR-006, FR-007.
-    ///
-    /// Responsible for:
-    /// - Letting members submit fault reports for equipment
-    /// - Letting staff confirm or reject a submitted report
-    /// - Updating equipment status to "Unavailable" when a report is confirmed
-    ///
-    /// Depends on: Models.Equipment (specifically EquipmentStatus enum)
-    /// Coordinate with: Person A and C on EquipmentStatus enum values — do not rename.
+    // PERSON B — Fault Reporting & Maintenance Module
+    // Covers FR-005, FR-006, FR-007.
+    //
+    // Responsible for:
+    // - Letting members submit fault reports for equipment
+    // - Letting staff confirm or reject a submitted report
+    // - Updating equipment status to "Unavailable" when a report is confirmed
+    //
+    // Depends on: Models.Equipment (specifically EquipmentStatus enum)
+    // Coordinate with: Person A and C on EquipmentStatus enum values — do not rename.
     public class FaultReportService
     {
         // In-memory store for the prototype.
         // TODO: replace with proper storage/database if the project moves beyond prototype stage.
         private readonly List<FaultReport> _reports = new();
 
+        private readonly IEquipmentRepository _equipmentRepository;
+
         private int _nextReportId = 1; // Counter for generating unique report IDs
 
-        /// FR-005: A member submits a fault report for a piece of equipment.
+        public FaultReportService (IEquipmentRepository equipmentRepository)
+        {
+            // Validate that the equipment repository is not null
+            _equipmentRepository = equipmentRepository ?? throw new ArgumentNullException(nameof(equipmentRepository));
+        }
+
+        // FR-005: A member submits a fault report for a piece of equipment.
         public FaultReport SubmitFaultReport(string equipmentId, Member member, string description)
         {
 
@@ -85,16 +98,9 @@ namespace GymQ.FaultModule
             return report;
         }
 
-        /// FR-006: Staff reviews a pending fault report and either confirms it as a formal maintenance report or rejects it.
+        // FR-006: Staff reviews a pending fault report and either confirms it as a formal maintenance report or rejects it.
         public void ReviewFaultReport(string reportId, Member staff, bool confirm)
         {
-            // TODO:
-            // 1. Validate staff.IsStaff == true
-            // 2. Find the FaultReport by reportId; validate it is still Pending
-            // 3. Set Status = Confirmed or Rejected, ReviewedByStaffId, ReviewedAt
-            // 4. If confirmed, call UpdateEquipmentStatus(report.EquipmentId, EquipmentStatus.Unavailable) (FR-007)
-            //    -- this likely means calling into a shared EquipmentRepository/service, not duplicating state here
-
             //Validation checks
             if (staff == null)
             {
@@ -132,24 +138,33 @@ namespace GymQ.FaultModule
             }
         }
 
-        /// FR-007: Updates the given equipment's status. Called internally after a
-        /// report is confirmed (Unavailable), and should also be callable when
-        /// maintenance is completed to restore Available status (future FR, not in current list).
+        // FR-007: Updates the given equipment's status. Called internally after a
+        // report is confirmed (Unavailable), and should also be callable when
+        // maintenance is completed to restore Available status (future FR, not in current list).
         public void UpdateEquipmentStatus(string equipmentId, EquipmentStatus newStatus)
         {
-            // TODO:
-            // 1. Look up the shared Equipment record (via shared repository, TBD with team)
-            // 2. Set its Status = newStatus
-            // 3. Consider: should this also notify members currently queued for this equipment?
-            //    (worth discussing with Person A — queue entries may need to be cleared/paused)
-            throw new NotImplementedException();
+            // validation checks
+            if (string.IsNullOrWhiteSpace(equipmentId))
+            {
+                throw new ArgumentException("Equipment ID is required.", nameof(equipmentId));
+            }
+
+            // Check if the equipment exists in the repository
+            var equipment = _equipmentRepository.GetById(equipmentId);
+            if (equipment == null)
+            {
+                throw new ArgumentException($"No equipment found with ID '{equipmentId}'.", nameof(equipmentId));
+            }
+
+            // Update the equipment status
+            equipment.Status = newStatus;
         }
 
-        /// Helper for staff-facing review screens: returns all reports still awaiting review.
+        // Helper for staff-facing review screens: returns all reports still awaiting review.
         public List<FaultReport> GetPendingReports()
         {
-            // TODO: filter _reports where Status == Pending
-            throw new NotImplementedException();
+            // Return a list of all reports that have pending status
+            return _reports.Where(r => r.Status == FaultReportStatus.Pending).ToList();
         }
     }
 }
