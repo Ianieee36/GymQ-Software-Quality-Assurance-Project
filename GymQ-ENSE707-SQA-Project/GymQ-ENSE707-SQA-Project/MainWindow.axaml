@@ -2,78 +2,84 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="GymQ_ENSE707_SQA_Project.MainWindow"
         Title="GymQ Project"
-        Width="900" Height="600">
+        Width="820" Height="620">
 
-    <Grid RowDefinitions="Auto,*" Margin="10">
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
-            <TextBlock Text="GymQ - Machines" FontSize="18" FontWeight="Bold" />
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="10,0,0,0">
-                <Button x:Name="ToggleStaffButton" Content="Staff View" Margin="8,0" />
+    <Grid RowDefinitions="Auto,*" Margin="20">
+
+        <!-- Header -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,15">
+            <TextBlock Grid.Column="0"
+                       Text="GymQ - Machines"
+                       FontSize="24" FontWeight="Bold"
+                       VerticalAlignment="Center"/>
+            <Button Grid.Column="1"
+                    Name="ToggleStaffButton"
+                    Content="Staff View"/>
+        </Grid>
+
+        <!-- Body -->
+        <Grid Grid.Row="1" ColumnDefinitions="300,*">
+
+            <!-- Equipment list (left column) -->
+            <ListBox Grid.Column="0"
+                     Name="EquipmentListBox"
+                     Width="280"
+                     Height="200"
+                     HorizontalAlignment="Left"
+                     VerticalAlignment="Top"/>
+
+            <!-- Right column: member view + staff view stacked -->
+            <StackPanel Grid.Column="1" Margin="20,0,0,0" Spacing="15">
+
+                <!-- Machine details (member view) -->
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Machine Details" FontSize="18" FontWeight="Bold"/>
+                    <Grid ColumnDefinitions="100,*" RowDefinitions="Auto,Auto,Auto">
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Name:"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Name="NameText"/>
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Status:"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Name="StatusText"/>
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="In Queue:"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Name="QueueCountText"/>
+                    </Grid>
+                </StackPanel>
+
+                <Button Name="JoinQueueButton" Content="Join Queue" HorizontalAlignment="Left"/>
+
+                <Separator/>
+
+                <Button Name="ToggleReportButton" Content="Report an Issue" HorizontalAlignment="Left"/>
+
+                <!-- Report panel (collapsed by default) -->
+                <StackPanel Name="ReportPanel" IsVisible="False" Spacing="8">
+                    <TextBlock Text="Report an Issue" FontSize="16" FontWeight="Bold"/>
+                    <TextBox Name="ReportDescriptionBox"
+                             Watermark="Describe the problem"
+                             AcceptsReturn="True"
+                             Height="80"/>
+                    <Button Name="ReportButton" Content="Submit Report" HorizontalAlignment="Left"/>
+                    <TextBlock Name="ReportResultText" Foreground="OrangeRed"/>
+                </StackPanel>
+
+                <Separator/>
+
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Messages" FontSize="16" FontWeight="Bold"/>
+                    <TextBlock Name="MessageText" TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <!-- Staff panel (collapsed by default) -->
+                <StackPanel Name="StaffPanel" IsVisible="False" Spacing="8">
+                    <TextBlock Text="Staff - Pending Reports" FontSize="18" FontWeight="Bold"/>
+                    <ListBox Name="PendingReportsListBox" Height="150"/>
+                    <TextBlock Name="PendingReportDetailsText" TextWrapping="Wrap"/>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Name="ConfirmReportButton" Content="Confirm" IsEnabled="False"/>
+                        <Button Name="RejectReportButton" Content="Reject" IsEnabled="False"/>
+                    </StackPanel>
+                </StackPanel>
+
             </StackPanel>
-        </StackPanel>
-
-        <Grid Grid.Row="1" ColumnDefinitions="2*,3*" Margin="0,10,0,0">
-            <!-- Machines list -->
-            <Border Background="#f3f3f3" CornerRadius="4" Padding="6">
-                <StackPanel>
-                    <TextBlock Text="Machines" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                    <ListBox x:Name="EquipmentListBox" Height="460" />
-                </StackPanel>
-            </Border>
-
-            <!-- Details / actions -->
-            <Border Background="#ffffff" CornerRadius="4" Padding="10">
-                <StackPanel Spacing="8">
-                    <TextBlock Text="Machine Details" FontWeight="SemiBold" />
-
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock Text="Name:" Width="80" />
-                        <TextBlock x:Name="NameText" />
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock Text="Status:" Width="80" />
-                        <TextBlock x:Name="StatusText" />
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock Text="In Queue:" Width="80" />
-                        <TextBlock x:Name="QueueCountText" />
-                    </StackPanel>
-
-                    <Button x:Name="JoinQueueButton" Content="Join Queue" Width="120" />
-
-                    <Separator />
-
-                    <Button x:Name="ToggleReportButton" Content="Report an Issue" Width="140" />
-
-                    <StackPanel x:Name="ReportPanel" IsVisible="False">
-                        <TextBlock Text="Report an Issue" FontWeight="SemiBold" />
-                        <TextBox x:Name="ReportDescriptionBox" AcceptsReturn="True" Height="100" />
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button x:Name="ReportButton" Content="Submit Report" Width="120" />
-                            <TextBlock x:Name="ReportResultText" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </StackPanel>
-
-                    <Separator />
-
-                    <StackPanel x:Name="StaffPanel" IsVisible="False" Spacing="6">
-                        <TextBlock Text="Staff - Pending Reports" FontWeight="SemiBold" />
-                        <ListBox x:Name="PendingReportsListBox" Height="140" />
-                        <TextBlock x:Name="PendingReportDetailsText" TextWrapping="Wrap" />
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button x:Name="ConfirmReportButton" Content="Confirm" Width="100" />
-                            <Button x:Name="RejectReportButton" Content="Reject" Width="100" />
-                        </StackPanel>
-                    </StackPanel>
-
-                    <Separator />
-
-                    <TextBlock Text="Messages" FontWeight="SemiBold" />
-                    <TextBlock x:Name="MessageText" TextWrapping="Wrap" />
-                </StackPanel>
-            </Border>
         </Grid>
     </Grid>
 </Window>
