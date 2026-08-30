@@ -96,7 +96,8 @@ namespace GymQ.SessionModule
                 // Finds an equipment via equipmentId through _equipment if not throws exception 
                 if (!_equipment.TryGetValue(equipmentId, out var equipment))
                 {
-                    throw new KeyNotFoundException($"Equipment '{equipmentId}' not found.");
+                    throw new ArgumentException(
+                        $"Equipment '{equipmentId}' not found in the system.", nameof(equipmentId));
                 }
 
                 // Check for any active sessions via equipmentId through _sessions
@@ -160,7 +161,10 @@ namespace GymQ.SessionModule
                 // Checks if the session does not exists
                 if(session == null)
                 {
-                    return;
+                    throw new InvalidOperationException(
+                        $"No active session found for equipment '{equipmentId}'. " +
+                        "Session may have already been ended or equipment was never in use." 
+                    );
                 }
 
                 // Mark the session as ended and also records the time when it was ended, and its reason
