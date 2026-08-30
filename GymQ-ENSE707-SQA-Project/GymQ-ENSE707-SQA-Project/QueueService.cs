@@ -235,5 +235,55 @@ namespace GymQ.QueueModule
 
             NotifyNextInQueue(equipmentId);
         }
+
+        /// <summary>
+        /// FR-004 (success path): Called when a notified member taps "Claim" within
+        /// their 2-minute window. Starts their session and removes them from the queue.
+        /// </summary>
+        /// <param name="equipmentId">The equipment being claimed.</param>
+        /// <param name="memberId">The member attempting to claim it.</param>
+        /// <returns>
+        /// True if the claim succeeded; false if invalid, not their turn,
+        /// not notified, expired, or session integration is unavailable.
+        /// </returns>
+        public bool ClaimEquipment(string equipmentId, string memberId)
+        {
+            if (string.IsNullOrWhiteSpace(equipmentId) ||
+                string.IsNullOrWhiteSpace(memberId))
+                return false;
+
+            if (!_queues.TryGetValue(equipmentId, out var queue) ||
+                queue.Count == 0)
+                return false;
+
+            var entry = queue[0];
+
+            // Must be the front-of-queue member
+            if (entry.MemberId != memberId)
+                return false;
+
+            // Must have actually been notified
+            if (entry.NotifiedAt == null)
+                return false;
+
+            // Must still be inside the 2-minute claim window
+            var elapsed = DateTime.UtcNow - entry.NotifiedAt.Value;
+
+            if (elapsed >= TimeSpan.FromMinutes(2))
+                return false;
+
+            // Claim cannot succeed without session tracking
+            if (_sessionService == null)
+                return false;
+
+            // Start session before mutating the queue.
+            // If StartSession throws, the member remains queued.
+            _sessionService.StartSession(equipmentId, memberId);
+
+            queue.Remove(entry);
+
+            return true;
+        }
+
     }
 }

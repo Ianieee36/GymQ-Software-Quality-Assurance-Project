@@ -388,5 +388,191 @@ namespace GymQ.Tests
                 equipment.Status);
         }
 
+        /////////////////////////
+        /// 
+        
+
+        // Tests for ClaimEquipment
+
+        // notified front member can claim the equipment and start a session
+        [TestMethod]
+        public void ClaimEquipment_ValidNotifiedFrontMember_ReturnsTrue()
+        {
+            var equipment = new Equipment("SquatRack2", "Squat Rack #2");
+            var equipmentStore = new Dictionary<string, Equipment>
+            {
+                [equipment.EquipmentId] = equipment
+            };
+            var sessionService = new SessionService(equipmentStore);
+            var service = new QueueService(sessionService);
+
+            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.NotifyNextInQueue("SquatRack2");
+
+            var result = service.ClaimEquipment("SquatRack2", "M001");
+
+            Assert.IsTrue(result);
+        }
+
+        // successful claim removes the member from the queue
+
+        [TestMethod]
+        public void ClaimEquipment_SuccessfulClaim_RemovesMemberFromQueue()
+        {
+            var equipment = new Equipment("SquatRack2", "Squat Rack #2");
+            var equipmentStore = new Dictionary<string, Equipment>
+            {
+                [equipment.EquipmentId] = equipment
+            };
+            var sessionService = new SessionService(equipmentStore);
+            var service = new QueueService(sessionService);
+
+            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.NotifyNextInQueue("SquatRack2");
+
+            service.ClaimEquipment("SquatRack2", "M001");
+
+            Assert.IsNull(service.GetQueuePosition("SquatRack2", "M001"));
+        }
+
+        // successful claim changes the equipment status to InUse
+
+        [TestMethod]
+        public void ClaimEquipment_SuccessfulClaim_StartsActiveSession()
+        {
+            var equipment = new Equipment("SquatRack2", "Squat Rack #2");
+            var equipmentStore = new Dictionary<string, Equipment>
+            {
+                [equipment.EquipmentId] = equipment
+            };
+            var sessionService = new SessionService(equipmentStore);
+            var service = new QueueService(sessionService);
+
+            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.NotifyNextInQueue("SquatRack2");
+
+            service.ClaimEquipment("SquatRack2", "M001");
+
+            Assert.AreEqual(EquipmentStatus.InUse, equipment.Status);
+        }
+
+        // non-front member cannot claim the equipment
+
+        [TestMethod]
+        public void ClaimEquipment_NonFrontMember_ReturnsFalse()
+        {
+            var equipment = new Equipment("SquatRack2", "Squat Rack #2");
+            var equipmentStore = new Dictionary<string, Equipment>
+            {
+                [equipment.EquipmentId] = equipment
+            };
+            var sessionService = new SessionService(equipmentStore);
+            var service = new QueueService(sessionService);
+
+            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M002", "Mia"));
+            service.NotifyNextInQueue("SquatRack2");
+
+            var result = service.ClaimEquipment("SquatRack2", "M002");
+
+            Assert.IsFalse(result);
+        }
+
+        // member who was never notified cannot claim the equipment
+
+        [TestMethod]
+        public void ClaimEquipment_NeverNotifiedMember_ReturnsFalse()
+        {
+            var equipment = new Equipment("SquatRack2", "Squat Rack #2");
+            var equipmentStore = new Dictionary<string, Equipment>
+            {
+                [equipment.EquipmentId] = equipment
+            };
+            var sessionService = new SessionService(equipmentStore);
+            var service = new QueueService(sessionService);
+
+            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+
+            var result = service.ClaimEquipment("SquatRack2", "M001");
+
+            Assert.IsFalse(result);
+        }
+
+        // expired claim window prevents member from claiming the equipment
+
+        [TestMethod]
+        public void ClaimEquipment_ExpiredClaimWindow_ReturnsFalse()
+        {
+            var equipment = new Equipment("SquatRack2", "Squat Rack #2");
+            var equipmentStore = new Dictionary<string, Equipment>
+            {
+                [equipment.EquipmentId] = equipment
+            };
+            var sessionService = new SessionService(equipmentStore);
+            var service = new QueueService(sessionService);
+
+            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.NotifyNextInQueue("SquatRack2");
+
+            var entry = GetQueueEntries(service, "SquatRack2")[0];
+            entry.NotifiedAt = DateTime.UtcNow.AddMinutes(-2).AddSeconds(-1);
+
+            var result = service.ClaimEquipment("SquatRack2", "M001");
+
+            Assert.IsFalse(result);
+        }
+
+        // unknown equipment cannot be claimed
+
+        [TestMethod]
+        public void ClaimEquipment_UnknownEquipment_ReturnsFalse()
+        {
+            var service = new QueueService();
+
+            var result = service.ClaimEquipment("UnknownEquipment", "M001");
+
+            Assert.IsFalse(result);
+        }
+
+        // missing session service prevents claiming equipment
+
+        [TestMethod]
+        public void ClaimEquipment_NoSessionService_ReturnsFalse()
+        {
+            var service = new QueueService();
+
+            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.NotifyNextInQueue("SquatRack2");
+
+            var result = service.ClaimEquipment("SquatRack2", "M001");
+
+            Assert.IsFalse(result);
+        }
+
+        // failed session start prevents claiming equipment, but member remains in queue
+
+        [TestMethod]
+        public void ClaimEquipment_StartSessionThrows_MemberRemainsQueued()
+        {
+            var equipment = new Equipment("SquatRack2", "Squat Rack #2");
+            var equipmentStore = new Dictionary<string, Equipment>
+            {
+                [equipment.EquipmentId] = equipment
+            };
+            var sessionService = new SessionService(equipmentStore);
+            var service = new QueueService(sessionService);
+
+            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.NotifyNextInQueue("SquatRack2");
+
+            // Force StartSession to throw by already having an active session on this equipment
+            sessionService.StartSession("SquatRack2", "M999");
+
+            Assert.ThrowsExactly<InvalidOperationException>(
+                () => service.ClaimEquipment("SquatRack2", "M001"));
+
+            Assert.AreEqual(1, service.GetQueuePosition("SquatRack2", "M001"));
+        }
+
     }
 }   
