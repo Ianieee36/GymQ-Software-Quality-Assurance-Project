@@ -26,14 +26,10 @@ namespace GymQ.QueueModule
         private readonly Dictionary<string, List<QueueEntry>> _queues = new();
         private readonly Dictionary<string, DateTime> _lastNudgeAt = new();
 
-        private readonly SessionService _sessionService;
+        private readonly SessionService? _sessionService;
 
-        public QueueService()
-        {
-            
-        }
 
-        public QueueService(SessionService sessionService)
+        public QueueService(SessionService? sessionService = null)
         {
             _sessionService = sessionService;
         }
