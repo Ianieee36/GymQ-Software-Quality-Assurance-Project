@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using GymQ.Models;
 
 namespace GymQ.FaultModule
@@ -24,7 +27,6 @@ namespace GymQ.FaultModule
         public FaultReportStatus Status { get; set; } = FaultReportStatus.Pending;
         public DateTime SubmittedAt { get; set; }
 
-        // TODO (Person B): set when staff review the report (FR-006)
         public string ReviewedByStaffId { get; set; }
         public DateTime? ReviewedAt { get; set; }
     }
@@ -48,13 +50,14 @@ namespace GymQ.FaultModule
     // Coordinate with: Person A and C on EquipmentStatus enum values — do not rename.
     public class FaultReportService
     {
-        // In-memory store for the prototype.
-        // TODO: replace with proper storage/database if the project moves beyond prototype stage.
-        private readonly List<FaultReport> _reports = new();
+        // Thread-safe in-memory store for the prototype.   ### AI suggested improvement
+        private readonly ConcurrentDictionary<string, FaultReport> _reports = new();
+
+        // Atomic counter for generating unique report IDs (instead of a simple integer)  ### AI suggested improvement
+        private long _nextReportId = 0;
+
 
         private readonly IEquipmentRepository _equipmentRepository;
-
-        private int _nextReportId = 1; // Counter for generating unique report IDs
 
         public FaultReportService (IEquipmentRepository equipmentRepository)
         {
@@ -82,10 +85,10 @@ namespace GymQ.FaultModule
                 throw new ArgumentException("Description cannot be empty");
             }
 
-            // Create new fault report
+            // Create new fault report with atomic ID generation
             var report = new FaultReport
             {
-                ReportId = $"R-{_nextReportId++}",
+                ReportId = $"R-{Interlocked.Increment(ref _nextReportId)}", //### AI suggested improvement
                 EquipmentId = equipmentId,
                 SubmittedByMemberId = member.MemberId,
                 Description = description,
@@ -94,7 +97,11 @@ namespace GymQ.FaultModule
             };
 
             // Add report and return it
-            _reports.Add(report);
+            if (!_reports.TryAdd(report.ReportId, report))
+            {
+                throw new InvalidOperationException("Failed to add fault report.");
+            }
+
             return report;
         }
 
@@ -113,8 +120,7 @@ namespace GymQ.FaultModule
             }
 
             // find the report by reportId and validate it exists
-            var report = _reports.Find(r => r.ReportId == reportId);
-            if (report == null)
+            if (!_reports.TryGetValue(reportId, out var report))
             {
                 throw new ArgumentException($"No fault report found with ID '{reportId}'.", nameof(reportId));
             }
@@ -164,7 +170,7 @@ namespace GymQ.FaultModule
         public List<FaultReport> GetPendingReports()
         {
             // Return a list of all reports that have pending status
-            return _reports.Where(r => r.Status == FaultReportStatus.Pending).ToList();
+            return _reports.Values.Where(r => r.Status == FaultReportStatus.Pending).ToList();
         }
     }
 }
