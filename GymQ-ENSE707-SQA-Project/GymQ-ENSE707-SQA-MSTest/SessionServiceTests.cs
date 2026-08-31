@@ -81,11 +81,11 @@ namespace GymQ_ENSE707_SQA_MSTest
         }
 
         [TestMethod]
-        public void StartSession_UnknownEquipment_ThrowsKeyNotFoundException()
+        public void StartSession_UnknownEquipment_ThrowsArgumentExceptions()
         {
             var (service, _) = BuildService(new FixedTimeProvider(BaseTime));
 
-            Assert.ThrowsExactly<KeyNotFoundException>(
+            Assert.ThrowsExactly<ArgumentException>(
                 () => service.StartSession("bench-9", "member-42"));
         }
 
@@ -128,13 +128,12 @@ namespace GymQ_ENSE707_SQA_MSTest
         }
 
         [TestMethod]
-        public void EndSession_NoActiveSession_ReturnsWithoutThrowing()
+        public void EndSession_NoActiveSession_ThrowInvalidOperationException()
         {
             var (service, equipment) = BuildService(new FixedTimeProvider(BaseTime));
 
-            service.EndSession("treadmill-1", SessionEndReason.ManualFinish);
-
-            Assert.AreEqual(EquipmentStatus.Available, equipment.Status);
+            Assert.ThrowsExactly<InvalidOperationException>(
+                () => service.EndSession("treadmill-1", SessionEndReason.ManualFinish));
         }
 
         [TestMethod]
