@@ -1,3 +1,4 @@
+using GymQ.Repository;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using GymQ.Models;
 using GymQ.QueueModule;
@@ -11,26 +12,6 @@ namespace GymQ.Tests
     [TestClass]
     public class CrossModuleIntegrationTests
     {
-        // Simple test double for FaultReportService's repository dependency,
-        // backed by the same Dictionary<string, Equipment> that SessionService
-        // uses, so both modules read/write the exact same Equipment instance.
-        private class TestEquipmentRepository : IEquipmentRepository
-        {
-            private readonly Dictionary<string, Equipment> _equipment;
-
-            public TestEquipmentRepository(Dictionary<string, Equipment> equipment)
-            {
-                _equipment = equipment;
-            }
-
-            public Equipment GetById(string equipmentId)
-            {
-                return _equipment.TryGetValue(equipmentId, out var equipment)
-                    ? equipment
-                    : null!;
-            }
-        }
-
         // 1. Queue claim -> Session start
         [TestMethod]
         public void ClaimEquipment_NotifiedFrontMember_StartsSessionAndUpdatesQueueAndEquipment()
@@ -40,7 +21,7 @@ namespace GymQ.Tests
             {
                 [equipment.EquipmentId] = equipment
             };
-            var sessionService = new SessionService(equipmentStore);
+            var sessionService = new SessionService(new InMemoryEquipmentRepository(equipmentStore));
             var queueService = new QueueService(sessionService);
 
             queueService.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
@@ -62,7 +43,7 @@ namespace GymQ.Tests
             {
                 [equipment.EquipmentId] = equipment
             };
-            var sessionService = new SessionService(equipmentStore);
+            var sessionService = new SessionService(new InMemoryEquipmentRepository(equipmentStore));
             var queueService = new QueueService(sessionService);
 
             // M001 is actively using the equipment
@@ -88,7 +69,7 @@ namespace GymQ.Tests
             {
                 [equipment.EquipmentId] = equipment
             };
-            var sessionService = new SessionService(equipmentStore);
+            var sessionService = new SessionService(new InMemoryEquipmentRepository(equipmentStore));
 
             sessionService.StartSession("SquatRack2", "M001");
             Assert.AreEqual(EquipmentStatus.InUse, equipment.Status);
@@ -108,9 +89,9 @@ namespace GymQ.Tests
                 [equipment.EquipmentId] = equipment
             };
 
-            var repository = new TestEquipmentRepository(equipmentStore);
+            var repository = new InMemoryEquipmentRepository(equipmentStore);
             var faultReportService = new FaultReportService(repository);
-            var sessionService = new SessionService(equipmentStore);
+            var sessionService = new SessionService(repository);
 
             var member = new Member("M001", "Enzo");
             var staff = new Member("S001", "Staff Steph", isStaff: true);

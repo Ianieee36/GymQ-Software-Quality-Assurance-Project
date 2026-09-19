@@ -1,3 +1,4 @@
+using GymQ.Repository;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using GymQ.Models;
 using GymQ.QueueModule;
@@ -369,7 +370,7 @@ namespace GymQ.Tests
                 [equipment.EquipmentId] = equipment
             };
 
-            var sessionService = new SessionService(equipmentStore);
+            var sessionService = new SessionService(new InMemoryEquipmentRepository(equipmentStore));
 
             sessionService.StartSession("SquatRack2", "M001");
 
@@ -403,7 +404,7 @@ namespace GymQ.Tests
             {
                 [equipment.EquipmentId] = equipment
             };
-            var sessionService = new SessionService(equipmentStore);
+            var sessionService = new SessionService(new InMemoryEquipmentRepository(equipmentStore));
             var service = new QueueService(sessionService);
 
             service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
@@ -424,7 +425,7 @@ namespace GymQ.Tests
             {
                 [equipment.EquipmentId] = equipment
             };
-            var sessionService = new SessionService(equipmentStore);
+            var sessionService = new SessionService(new InMemoryEquipmentRepository(equipmentStore));
             var service = new QueueService(sessionService);
 
             service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
@@ -445,7 +446,7 @@ namespace GymQ.Tests
             {
                 [equipment.EquipmentId] = equipment
             };
-            var sessionService = new SessionService(equipmentStore);
+            var sessionService = new SessionService(new InMemoryEquipmentRepository(equipmentStore));
             var service = new QueueService(sessionService);
 
             service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
@@ -466,7 +467,7 @@ namespace GymQ.Tests
             {
                 [equipment.EquipmentId] = equipment
             };
-            var sessionService = new SessionService(equipmentStore);
+            var sessionService = new SessionService(new InMemoryEquipmentRepository(equipmentStore));
             var service = new QueueService(sessionService);
 
             service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
@@ -488,7 +489,7 @@ namespace GymQ.Tests
             {
                 [equipment.EquipmentId] = equipment
             };
-            var sessionService = new SessionService(equipmentStore);
+            var sessionService = new SessionService(new InMemoryEquipmentRepository(equipmentStore));
             var service = new QueueService(sessionService);
 
             service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
@@ -508,7 +509,7 @@ namespace GymQ.Tests
             {
                 [equipment.EquipmentId] = equipment
             };
-            var sessionService = new SessionService(equipmentStore);
+            var sessionService = new SessionService(new InMemoryEquipmentRepository(equipmentStore));
             var service = new QueueService(sessionService);
 
             service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
@@ -559,7 +560,7 @@ namespace GymQ.Tests
             {
                 [equipment.EquipmentId] = equipment
             };
-            var sessionService = new SessionService(equipmentStore);
+            var sessionService = new SessionService(new InMemoryEquipmentRepository(equipmentStore));
             var service = new QueueService(sessionService);
 
             service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));

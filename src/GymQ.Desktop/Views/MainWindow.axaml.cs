@@ -1,4 +1,5 @@
-﻿using Avalonia;
+using GymQ.Repository;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -101,14 +102,14 @@ public partial class MainWindow : Window
         // Services
         // ---------------------------------------------------------
 
-        _sessionService = new SessionService(_equipmentStore);
+        var equipmentRepository = new InMemoryEquipmentRepository(_equipmentStore);
+        _sessionService = new SessionService(equipmentRepository);
 
         // Uses your updated QueueService integration constructor.
         _queueService = new QueueService(_sessionService);
 
         _faultService =
-            new FaultReportService(
-                new LocalEquipmentRepository(_equipmentStore));
+            new FaultReportService(equipmentRepository);
 
         // ---------------------------------------------------------
         // Demo state
@@ -1362,30 +1363,4 @@ public partial class MainWindow : Window
         };
     }
 
-    // =============================================================
-    // FAULT SERVICE REPOSITORY ADAPTER
-    // =============================================================
-
-    private sealed class LocalEquipmentRepository
-        : IEquipmentRepository
-    {
-        private readonly Dictionary<string, Equipment>
-            _equipment;
-
-        public LocalEquipmentRepository(
-            Dictionary<string, Equipment> equipment)
-        {
-            _equipment = equipment;
-        }
-
-        public Equipment? GetById(
-            string equipmentId)
-        {
-            return _equipment.TryGetValue(
-                equipmentId,
-                out var equipment)
-                    ? equipment
-                    : null;
-        }
-    }
 }

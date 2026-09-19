@@ -1,3 +1,4 @@
+using GymQ.Repository;
 using GymQ.Models;
 using GymQ.SessionModule;
 
@@ -35,7 +36,7 @@ namespace GymQ_ENSE707_SQA_MSTest
         {
             var equipment = new Equipment(equipmentId, "Treadmill #1") { Status = status };
             var store = new Dictionary<string, Equipment> { [equipment.EquipmentId] = equipment };
-            return (new SessionService(store, clock), equipment);
+            return (new SessionService(new InMemoryEquipmentRepository(store), clock), equipment);
         }
 
 
@@ -51,7 +52,7 @@ namespace GymQ_ENSE707_SQA_MSTest
                 [treadmill.EquipmentId] = treadmill
             };
 
-            var sessionService = new SessionService(equipmentStore, clock);
+            var sessionService = new SessionService(new InMemoryEquipmentRepository(equipmentStore), clock);
 
             var session = sessionService.StartSession("treadmill-1", "member-42");
 
@@ -258,7 +259,7 @@ namespace GymQ_ENSE707_SQA_MSTest
                 [treadmill.EquipmentId] = treadmill,
                 [bike.EquipmentId] = bike
             };
-            var service = new SessionService(store, clock);
+            var service = new SessionService(new InMemoryEquipmentRepository(store), clock);
 
             service.StartSession("treadmill-1", "member-42");
 
