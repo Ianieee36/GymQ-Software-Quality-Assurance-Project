@@ -1,0 +1,28 @@
+# Studio UI integration foundation
+
+GymSession coordinates queue, session, and fault-report actions through the existing services. SessionService and FaultReportService receive the same InMemoryEquipmentRepository instance. No database or persistence is added.
+
+The existing service method bodies are preserved. QueueService and SessionService are now partial classes so presentation helpers can live in separate files. Queue helpers provide a copied queue snapshot and a leave action. Session helpers expose active sessions and session history for the UI.
+
+GymSession supports start, join, leave, claim, finish, nudge/response, report/review, and timeout processing. It preserves immediate session start on claim and the existing equipment-level nudge cooldown. Maintenance completion is outside this phase’s scope.
+
+Sample equipment and member data are included for development and testing. Use new GymSession(seed: false) to start without seeded sessions or reports; equipment and member data remain available.
+
+The current MainWindow is not connected to this coordinator yet. When connecting the screens:
+
+- Create one GymSession instance shared by all screens.
+- Call Tick() regularly from the UI timer.
+- Refresh ViewModels when the Changed event fires.
+- Run all coordinator actions on the UI thread.
+
+This layer does not add support for concurrent access to QueueService.
+
+## Validation
+
+Run from the repository root:
+
+`dotnet build GymQ.slnx -c Release`
+`dotnet test GymQ.slnx -c Release`
+
+GymSessionIntegrationTests covers shared equipment data, reserved turns, handover, claim, nudge cooldown and timeout, claim expiry, and staff review.
+

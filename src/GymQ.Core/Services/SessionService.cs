@@ -54,7 +54,7 @@ namespace GymQ.SessionModule
         }
     }
 
-    public class SessionService
+    public partial class SessionService
     {
         // In-memory list for newly created session
         private readonly List<UsageSession> _sessions = new(); 

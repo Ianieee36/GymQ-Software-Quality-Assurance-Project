@@ -19,7 +19,7 @@ namespace GymQ.QueueModule
     /// Depends on: Models.Equipment, Models.Member, Models.QueueEntry
     /// Read by: Person C's SessionService (session starts when a queue claim succeeds)
     /// </summary>
-    public class QueueService
+    public partial class QueueService
     {
         // In-memory store for the prototype. One list per equipment, keyed by EquipmentId.
         // TODO: replace with proper storage/repository if the project moves beyond prototype stage.
