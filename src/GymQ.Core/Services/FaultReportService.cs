@@ -20,21 +20,21 @@ namespace GymQ.FaultModule
     // Represents a single fault report submitted by a member and reviewed by staff.
     public class FaultReport
     {
-        public string ReportId { get; set; }
-        public string EquipmentId { get; set; }
-        public string SubmittedByMemberId { get; set; }
-        public string Description { get; set; }
+        public required string ReportId { get; set; }
+        public required string EquipmentId { get; set; }
+        public required string SubmittedByMemberId { get; set; }
+        public required string Description { get; set; }
         public FaultReportStatus Status { get; set; } = FaultReportStatus.Pending;
         public DateTime SubmittedAt { get; set; }
 
-        public string ReviewedByStaffId { get; set; }
+        public string? ReviewedByStaffId { get; set; }
         public DateTime? ReviewedAt { get; set; }
     }
 
     // Testable interface for Equipment repository
     public interface IEquipmentRepository
     {
-        Equipment GetById(string equipmentId);
+        Equipment? GetById(string equipmentId);
     }
 
 

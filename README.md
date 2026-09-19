@@ -16,3 +16,22 @@ GymQ is a digital queue and equipment managing app built for busy gyms. It gives
 \- A way to report broken equipment.  
 \- View current machine/equipment satus.  
 \- Gym traffic and machine usage analytics.
+
+## Development after restructuring
+
+Run these commands from the repository root (the folder containing `GymQ.slnx`).
+Install the .NET 8 SDK for the app and .NET 10 SDK for the test project.
+
+```sh
+dotnet restore GymQ.slnx
+dotnet build GymQ.slnx -c Release
+dotnet test GymQ.slnx -c Release --logger "trx;LogFileName=verification.trx" --results-directory TestResults
+dotnet run --project src/GymQ.Desktop/GymQ.Desktop.csproj
+```
+
+- `src/GymQ.Core`: models and services.
+- `src/GymQ.Desktop`: Avalonia application and views; references Core.
+- `tests/GymQ.Tests`: original service tests and cross-module integration tests; references Core.
+- `docs`: project documentation.
+
+`bin`, `obj`, and `TestResults` are generated and ignored by Git. Preserve any test results needed as assessment evidence separately.

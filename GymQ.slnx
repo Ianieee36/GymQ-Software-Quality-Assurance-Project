@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="src/GymQ.Core/GymQ.Core.csproj" />
+  <Project Path="src/GymQ.Desktop/GymQ.Desktop.csproj" />
+  <Project Path="tests/GymQ.Tests/GymQ.Tests.csproj" />
+</Solution>

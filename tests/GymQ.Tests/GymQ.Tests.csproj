@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GymQ-ENSE707-SQA-Project\GymQ-ENSE707-SQA-Project.csproj" />
+    <ProjectReference Include="..\..\src\GymQ.Core\GymQ.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

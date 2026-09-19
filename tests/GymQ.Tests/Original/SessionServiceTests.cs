@@ -264,7 +264,7 @@ namespace GymQ_ENSE707_SQA_MSTest
 
             var statuses = service.GetAllEquipmentStatus();
 
-            Assert.AreEqual(2, statuses.Count);
+            Assert.HasCount(2, statuses);
             Assert.AreEqual(EquipmentStatus.InUse, statuses.Single(e => e.EquipmentId == "treadmill-1").Status);
             Assert.AreEqual(EquipmentStatus.Unavailable, statuses.Single(e => e.EquipmentId == "bike-2").Status);
         }
