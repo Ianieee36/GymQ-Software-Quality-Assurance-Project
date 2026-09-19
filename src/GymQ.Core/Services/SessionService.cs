@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using GymQ.Models;
+using GymQ.Repository;
 
 namespace GymQ.SessionModule
 {
@@ -58,16 +59,18 @@ namespace GymQ.SessionModule
         // In-memory list for newly created session
         private readonly List<UsageSession> _sessions = new(); 
         // Storage for equipments.
-        private readonly Dictionary<string, Equipment> _equipment;
+        
+        //
+        private readonly IEquipmentRepository _equipmentRepository;
         // It uses for recording the actual time whenever a session starts/ends
         private readonly TimeProvider _clock;
         // Ensures one that only one thread can execute in a specific block of code.
         private readonly object _lockObject = new();
 
         // SessionService Constructor
-        public SessionService(Dictionary<string, Equipment> equipment, TimeProvider? clock = null)
+        public SessionService(IEquipmentRepository equipmentRepository, TimeProvider? clock = null)
         {
-            _equipment = equipment;
+            _equipmentRepository = equipmentRepository ?? throw new ArgumentNullException(nameof(equipmentRepository));
             _clock = clock ?? TimeProvider.System;
         }
         
@@ -92,13 +95,16 @@ namespace GymQ.SessionModule
                 {
                     throw new ArgumentException("Equipment ID must not be null or empty.", nameof(equipmentId));
                 }
+                
+                // Find equipmentId from the repository
+                var equipment = _equipmentRepository.GetById(equipmentId);
 
-                // Finds an equipment via equipmentId through _equipment if not throws exception 
-                if (!_equipment.TryGetValue(equipmentId, out var equipment))
+                // Validates if the equipment does exist in the repository
+                if(equipment == null)
                 {
-                    throw new ArgumentException(
-                        $"Equipment '{equipmentId}' not found in the system.", nameof(equipmentId));
+                    throw new ArgumentException($"No equipment found with ID '{equipmentId}'.", nameof(equipmentId));
                 }
+
 
                 // Check for any active sessions via equipmentId through _sessions
                 bool alreadyActive = _sessions.Exists(s =>
@@ -171,15 +177,20 @@ namespace GymQ.SessionModule
                 session.MarkEnded(_clock.GetUtcNow().UtcDateTime, reason);
 
                 // Find the key (equipmentId)
-                if(_equipment.TryGetValue(equipmentId, out var equipment))
-                {   
-                    // If found, check if the equipment is not Unavailable
-                    if(equipment.Status != EquipmentStatus.Unavailable)
-                    {   
-                        // Change the equipment status to Available
-                        equipment.Status = EquipmentStatus.Available;
-                    }
+                var equipment = _equipmentRepository.GetById(equipmentId);
+
+                if(equipment == null)
+                {
+                    throw new ArgumentException($"No equipment found with ID '{equipmentId}'.", nameof(equipmentId));
                 }
+                    
+                // If found, check if the equipment is not Unavailable
+                if(equipment.Status != EquipmentStatus.Unavailable)
+                {   
+                    // Change the equipment status to Available
+                    equipment.Status = EquipmentStatus.Available;
+                }
+    
             }
             
         }
@@ -237,7 +248,7 @@ namespace GymQ.SessionModule
         public List<Equipment> GetAllEquipmentStatus()
         {   
             // Displays every equipment on the list
-            return _equipment.Values.ToList();
+            return _equipmentRepository.GetAll();
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using GymQ.Models;
+using GymQ.Repository;
 
 namespace GymQ.FaultModule
 {
@@ -30,13 +31,6 @@ namespace GymQ.FaultModule
         public string? ReviewedByStaffId { get; set; }
         public DateTime? ReviewedAt { get; set; }
     }
-
-    // Testable interface for Equipment repository
-    public interface IEquipmentRepository
-    {
-        Equipment? GetById(string equipmentId);
-    }
-
 
     // PERSON B — Fault Reporting & Maintenance Module
     // Covers FR-005, FR-006, FR-007.
