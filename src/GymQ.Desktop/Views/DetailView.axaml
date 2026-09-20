@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="GymQ.Desktop.Views.DetailView">
+  <StackPanel Margin="22,12,22,24" Spacing="18">
+    <Button Classes="quiet" Content="‹  Equipment" Command="{Binding Back}" HorizontalAlignment="Left"/>
+    <Image Source="{Binding Card.Image}" Height="250"/>
+    <TextBlock Text="{Binding Card.Name}" Classes="h1 center"/>
+    <Border Background="{Binding Card.BadgeColour}" CornerRadius="12" Padding="10,4" HorizontalAlignment="Center">
+      <TextBlock Text="{Binding Card.Status}" Foreground="#151517" FontWeight="Bold" FontSize="10"/>
+    </Border>
+    <TextBlock Text="{Binding Card.Detail}" Classes="muted center"/>
+    <Border Classes="divider"/>
+    <TextBlock Text="Take your turn. Keep the club moving." Classes="center"/>
+    <TextBlock Text="Sessions have a 30-minute limit. If someone is using the machine, join its queue and we'll notify you when it's ready." Classes="muted center"/>
+    <Button Content="{Binding Card.ActionLabel}" Command="{Binding Card.Action}" Classes="primary" IsVisible="{Binding Card.CanAct}"/>
+    <Button Content="Report Issue" Command="{Binding Report}" Classes="link"/>
+  </StackPanel>
+</UserControl>

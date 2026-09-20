@@ -124,6 +124,13 @@ namespace GymQ.SessionModule
                     throw new InvalidOperationException("This equipment is unavailable, due to maintenance");
                 }
 
+                // Check within the same lock as session creation, including queue claims.
+                if (_sessions.Exists(s => s.MemberId == memberId && s.EndTime == null))
+                {
+                    throw new InvalidOperationException(
+                        "You already have an active session. End it before starting another machine.");
+                }
+
                 // Change equipment status to InUse
                 equipment.Status = EquipmentStatus.InUse;
 

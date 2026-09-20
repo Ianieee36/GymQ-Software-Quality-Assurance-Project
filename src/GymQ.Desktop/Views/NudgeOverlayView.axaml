@@ -1,0 +1,13 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="GymQ.Desktop.Views.NudgeOverlayView">
+  <Border Background="#27272A" BorderBrush="#4B4B50" BorderThickness="1" CornerRadius="24" Padding="24,26">
+    <StackPanel Spacing="18">
+      <Image Source="{Binding Image}" Height="180"/>
+      <TextBlock Text="Still using" Classes="h1 center"/>
+      <TextBlock Text="{Binding Name,StringFormat='{}{0}?'}" Classes="h2 center" Margin="0,-13,0,0"/>
+      <TextBlock Text="The next member in the queue has indicated that the equipment appears to be available." Classes="center" Foreground="#C7C7CD"/>
+      <Button Content="YES, I'M STILL USING IT" Classes="primary" Command="{Binding StillUsing}"/>
+      <Button Content="END MY SESSION" Classes="outline" Command="{Binding Finish}"/>
+      <TextBlock Text="{Binding Countdown}" Foreground="#F05270" Classes="center" FontSize="12"/>
+    </StackPanel>
+  </Border>
+</UserControl>

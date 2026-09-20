@@ -1,0 +1,13 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="GymQ.Desktop.Views.SuccessOverlayView">
+  <Border Background="#202323" BorderBrush="#5C9978" BorderThickness="1" CornerRadius="24" Padding="24,34">
+    <StackPanel Spacing="24">
+      <Border Width="100" Height="100" CornerRadius="50" BorderBrush="#61D798" BorderThickness="4" HorizontalAlignment="Center" Margin="0,8,0,14">
+        <Path Data="M2,13 L10,21 28,2" Stroke="#61D798" StrokeThickness="4" StrokeLineCap="Round" StrokeJoin="Round" Width="48" Height="34" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+      </Border>
+      <TextBlock Text="Report submitted" Classes="h1 center"/>
+      <TextBlock Text="Your report has been sent to gym staff for review." Classes="center"/>
+      <TextBlock Text="Thank you for helping keep the equipment in great condition." Classes="muted center"/>
+      <Button Content="DONE" Classes="primary" Command="{Binding Done}" Margin="0,18,0,0"/>
+    </StackPanel>
+  </Border>
+</UserControl>

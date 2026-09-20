@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="GymQ.Desktop.Views.QueueView">
+  <StackPanel Margin="22,12,22,24" Spacing="15">
+    <Grid ColumnDefinitions="40,*,40">
+      <Button Content="‹" Classes="quiet" Command="{Binding Back}"/>
+      <TextBlock Grid.Column="1" Text="Waiting in Queue" FontWeight="SemiBold" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    </Grid>
+    <Image Source="{Binding Image}" Height="185" Margin="0,4"/>
+    <TextBlock Text="{Binding Name,StringFormat='Waiting for {0}'}" Classes="h2 center"/>
+    <Border Classes="divider"/>
+    <StackPanel Spacing="5">
+      <TextBlock Text="{Binding Position}" Classes="section center"/>
+      <TextBlock Text="{Binding CurrentDuration,StringFormat='Current user duration: {0}'}" Classes="muted center"/>
+    </StackPanel>
+    <Border Classes="divider"/>
+    <Grid ColumnDefinitions="40,*,Auto">
+      <Border Background="#403640" Width="36" Height="36" CornerRadius="18">
+        <TextBlock Text="{Binding Initial}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+      </Border>
+      <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="3">
+        <TextBlock Text="Current user" Classes="muted" FontSize="11"/>
+        <TextBlock Text="{Binding CurrentUser}" FontWeight="SemiBold"/>
+      </StackPanel>
+      <TextBlock Grid.Column="2" Text="{Binding CurrentDuration}" VerticalAlignment="Center"/>
+    </Grid>
+    <Border Classes="divider"/>
+    <TextBlock Text="Queue" Classes="section"/>
+    <ItemsControl ItemsSource="{Binding People}">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <StackPanel Spacing="6"/>
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <Border Background="{Binding Background}" Padding="12,9" CornerRadius="10">
+            <Grid ColumnDefinitions="24,*">
+              <TextBlock Text="{Binding Number,StringFormat='{}{0}.'}" FontWeight="SemiBold"/>
+              <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="3">
+                <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                <TextBlock Text="{Binding Subtitle}" Classes="muted" FontSize="10"/>
+              </StackPanel>
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <Button Content="Nudge User" Classes="outline" Command="{Binding Nudge}" IsEnabled="{Binding CanNudge}" HorizontalAlignment="Right"/>
+    <TextBlock Text="{Binding Feedback}" Foreground="#77D4A2" FontSize="12"/>
+    <Button Content="Leave Queue" Classes="link" Command="{Binding Leave}"/>
+    <TextBlock Text="One nudge per machine every 5 minutes." Classes="muted center" FontSize="10"/>
+  </StackPanel>
+</UserControl>

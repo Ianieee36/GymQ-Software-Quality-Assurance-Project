@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="GymQ.Desktop.Views.StaffView">
+  <StackPanel Margin="22,18,22,24" Spacing="18">
+    <TextBlock Text="Staff dashboard" Classes="h1"/>
+    <TextBlock Text="Equipment status and member reports." Classes="muted"/>
+    <StackPanel IsVisible="{Binding IsStaff}" Spacing="16">
+      <TextBlock Text="Equipment status" Classes="section"/>
+      <ItemsControl ItemsSource="{Binding Equipment}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Border Classes="card" Margin="0,0,0,10">
+              <StackPanel Spacing="10">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="{Binding Card.Name}" FontWeight="SemiBold"/>
+                  <Border Grid.Column="1" Background="{Binding Card.BadgeColour}" CornerRadius="8" Padding="6,3">
+                    <TextBlock Text="{Binding Card.Status}" Foreground="#151517" FontSize="8" FontWeight="Bold"/>
+                  </Border>
+                </Grid>
+                
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <TextBlock Text="{Binding PendingLabel}" Classes="h2"/>
+      <TextBlock Text="All caught up. No reports waiting for review." Classes="muted" IsVisible="{Binding NoReports}"/>
+      <ItemsControl ItemsSource="{Binding Reports}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Border Classes="card" Margin="0,0,0,12">
+              <StackPanel Spacing="12">
+                <TextBlock Text="{Binding Name}" Classes="section"/>
+                <TextBlock Text="{Binding Description}"/>
+                <TextBlock Text="{Binding Meta}" Classes="muted" FontSize="11"/>
+                <Grid ColumnDefinitions="*,*">
+                  <Button Content="Reject" Classes="outline" Command="{Binding Reject}"/>
+                  <Button Grid.Column="1" Margin="10,0,0,0" Content="Confirm fault" Classes="primary" Command="{Binding Confirm}"/>
+                </Grid>
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+    <TextBlock Text="Select Gym Staff in Profile to view this screen." IsVisible="{Binding !IsStaff}"/>
+  </StackPanel>
+</UserControl>
