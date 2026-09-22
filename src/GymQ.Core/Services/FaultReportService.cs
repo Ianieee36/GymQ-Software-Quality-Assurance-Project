@@ -53,8 +53,11 @@ namespace GymQ.FaultModule
 
         private readonly IEquipmentRepository _equipmentRepository;
 
-        public FaultReportService (IEquipmentRepository equipmentRepository)
+        private readonly TimeProvider _clock;
+
+        public FaultReportService (IEquipmentRepository equipmentRepository, TimeProvider? clock = null)
         {
+            _clock = clock ?? TimeProvider.System;
             // Validate that the equipment repository is not null
             _equipmentRepository = equipmentRepository ?? throw new ArgumentNullException(nameof(equipmentRepository));
         }
@@ -87,7 +90,7 @@ namespace GymQ.FaultModule
                 SubmittedByMemberId = member.MemberId,
                 Description = description,
                 Status = FaultReportStatus.Pending,
-                SubmittedAt = DateTime.UtcNow
+                SubmittedAt = _clock.GetUtcNow().UtcDateTime
             };
 
             // Add report and return it
@@ -129,7 +132,7 @@ namespace GymQ.FaultModule
             report.Status = confirm ? FaultReportStatus.Confirmed : FaultReportStatus.Rejected;
 
             report.ReviewedByStaffId = staff.MemberId;
-            report.ReviewedAt = DateTime.UtcNow;
+            report.ReviewedAt = _clock.GetUtcNow().UtcDateTime;
 
             // FR-007: If the report is confirmed, update the equipment status to Unavailable
             if (confirm)

@@ -9,8 +9,18 @@ public sealed class ProfileViewModel : PageViewModel
     public Member Current { get => Shell.Current; set => Shell.Current = value; }
     public bool IsStaff => Current.IsStaff;
     public ActionCommand Staff { get; }
+    public ActionCommand AdvanceOne { get; }
+    public ActionCommand AdvanceTwo { get; }
+    public ActionCommand AdvanceThirty { get; }
+    public string DemoTime => $"Demo time advanced: {Shell.Gym.AdvancedBy.TotalMinutes:0} minutes";
+    public override void Refresh() => Notify(nameof(DemoTime));
     public ProfileViewModel(ShellViewModel shell) : base(shell)
-    { Staff = new(() => shell.Navigate("staff")); }
+    {
+        Staff = new(() => shell.Navigate("staff"));
+        AdvanceOne = new(() => shell.Perform(() => shell.Gym.AdvanceDemoTime(1)));
+        AdvanceTwo = new(() => shell.Perform(() => shell.Gym.AdvanceDemoTime(2)));
+        AdvanceThirty = new(() => shell.Perform(() => shell.Gym.AdvanceDemoTime(30)));
+    }
 }
 
 public sealed class StaffViewModel : PageViewModel

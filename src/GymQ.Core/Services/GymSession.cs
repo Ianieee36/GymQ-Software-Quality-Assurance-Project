@@ -32,6 +32,21 @@ public sealed class GymSession
     public List<FaultReport> Reports { get; } = new();
     private readonly Dictionary<string, NudgeNotice> _nudges = new();
     public IReadOnlyCollection<NudgeNotice> Nudges => _nudges.Values;
+    private readonly DemoClock _clock = new();
+    public DateTime UtcNow => _clock.GetUtcNow().UtcDateTime;
+    public TimeSpan AdvancedBy { get; private set; }
+    public void AdvanceDemoTime(int minutes)
+    {
+        if (minutes is not (1 or 2 or 30)) throw new ArgumentOutOfRangeException(nameof(minutes));
+        // Process in seconds so handovers and later deadlines occur in order.
+        for (var second = 0; second < minutes * 60; second++)
+        {
+            _clock.Advance(TimeSpan.FromSeconds(1));
+            Tick();
+        }
+        AdvancedBy += TimeSpan.FromMinutes(minutes);
+        Changed?.Invoke();
+    }
     public event Action? Changed;
     public string MemberName(string id) => Members.FirstOrDefault(m => m.MemberId == id)?.Name ?? id;
 
@@ -39,9 +54,9 @@ public sealed class GymSession
     public GymSession(bool seed = true)
     {
         var repository = new InMemoryEquipmentRepository(Equipment);
-        Sessions = new(repository);
-        Queue = new(Sessions);
-        Faults = new(repository);
+        Sessions = new(repository, _clock);
+        Queue = new(Sessions, _clock);
+        Faults = new(repository, _clock);
         if (seed)
         {
             Sessions.StartSession("E2", "M002");
@@ -79,7 +94,7 @@ public sealed class GymSession
     {
         var current = Sessions.ReadActiveSession(equipmentId) ?? throw new InvalidOperationException("There is no active user to nudge.");
         if (!Queue.SendNudge(equipmentId, member.MemberId)) throw new InvalidOperationException("Only the next member can nudge. Please wait 5 minutes between nudges on this machine.");
-        _nudges[equipmentId] = new(equipmentId, current.MemberId, DateTime.UtcNow.AddMinutes(1)); Changed?.Invoke();
+        _nudges[equipmentId] = new(equipmentId, current.MemberId, UtcNow.AddMinutes(1)); Changed?.Invoke();
     }
     public void Respond(string equipmentId, Member member, bool stillUsing)
     {
@@ -104,7 +119,7 @@ public sealed class GymSession
     {
         // Check for expired nudges and end sessions if the user did not respond in time.
         bool changed = false;
-        foreach (var n in _nudges.Values.Where(n => n.ExpiresAt <= DateTime.UtcNow).ToArray())
+        foreach (var n in _nudges.Values.Where(n => n.ExpiresAt <= UtcNow).ToArray())
         {
             if (Sessions.ReadActiveSession(n.EquipmentId)?.MemberId == n.MemberId)
             { Sessions.EndSession(n.EquipmentId, SessionEndReason.NudgeTimeout); OfferNext(n.EquipmentId); }

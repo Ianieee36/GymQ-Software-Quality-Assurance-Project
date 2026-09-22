@@ -8,8 +8,8 @@ public sealed class SessionViewModel : PageViewModel
     public Bitmap Image => EquipmentImages.Get(EquipmentId);
     public bool IsActive => Shell.Gym.Sessions.ReadActiveSession(EquipmentId)?.MemberId == Shell.Current.MemberId;
     public string Headline => IsActive ? "You're using" : "Session complete";
-    public string Duration => Shell.Gym.Sessions.ReadActiveSession(EquipmentId) is { } s ? Time(DateTime.UtcNow - s.StartTime) : "00:00";
-    public string Remaining => Shell.Gym.Sessions.ReadActiveSession(EquipmentId) is { } s ? Time(s.StartTime.AddMinutes(30) - DateTime.UtcNow) + " left of your 30-minute session" : "Your equipment is ready for the next member.";
+    public string Duration => Shell.Gym.Sessions.ReadActiveSession(EquipmentId) is { } s ? Time(Shell.Gym.UtcNow - s.StartTime) : "00:00";
+    public string Remaining => Shell.Gym.Sessions.ReadActiveSession(EquipmentId) is { } s ? Time(s.StartTime.AddMinutes(30) - Shell.Gym.UtcNow) + " left of your 30-minute session" : "Your equipment is ready for the next member.";
     public ActionCommand End { get; }
     public ActionCommand Report { get; }
     public SessionViewModel(ShellViewModel shell, string id) : base(shell)

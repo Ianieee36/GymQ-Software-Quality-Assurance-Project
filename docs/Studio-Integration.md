@@ -29,3 +29,8 @@ GymSessionIntegrationTests covers shared equipment data, reserved turns, handove
 
 
 EquipmentUiTests verifies rendered screens, start/end, queue entry, member switching, nudge response, claim, reporting the selected machine, and staff confirmation. Screenshots are written to the system temporary directory under gymq-equipment-ui-screenshots.
+
+
+## Demo time controls
+
+Profile includes +1, +2, and +30 minute controls. A shared TimeProvider advances sessions, queue deadlines, nudge cooldowns, report timestamps, and UI countdowns without changing the computer clock. Time continues normally between clicks. Advances process one-second steps so earlier handovers and subsequent claim expiries occur in order. All accounts share the offset, and closing the app resets it along with the in-memory data. QueueService and FaultReportService accept an optional clock; existing callers default to system time.

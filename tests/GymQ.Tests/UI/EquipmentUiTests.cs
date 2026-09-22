@@ -64,6 +64,12 @@ public class EquipmentUiTests
             Click("DONE"); SwitchAccount(4); shell.Navigate("staff"); Snap("08-staff");
             Click("Confirm fault"); Assert.AreEqual(GymQ.Models.EquipmentStatus.Unavailable, shell.Gym.Equipment["E1"].Status);
             SwitchAccount(0); shell.Navigate("profile"); Snap("09-profile");
+            Click("Advance demo time · 1 minute");
+            Click("Advance demo time · 2 minutes");
+            Click("Advance demo time · 30 minutes");
+            Assert.AreEqual(TimeSpan.FromMinutes(33), shell.Gym.AdvancedBy);
+            Assert.IsNull(shell.Gym.Sessions.ReadActiveSession("E2"));
+            Snap("13-demo-controls");
             shell.Navigate("equipment"); w.Width = 370; w.Height = 680; Snap("12-small-window");
             w.Close();
         }, CancellationToken.None);
