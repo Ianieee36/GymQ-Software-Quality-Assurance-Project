@@ -1,3 +1,4 @@
+using GymQ.Repository;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using GymQ.Models;
 using GymQ.FaultModule;
@@ -10,30 +11,12 @@ namespace GymQ.Tests
     [TestClass]
     public class FaultReportServiceTests
     {
-        // Simple in-memory test double for FaultReportService's repository dependency.
-        private class TestEquipmentRepository : IEquipmentRepository
-        {
-            private readonly Dictionary<string, Equipment> _equipment;
-
-            public TestEquipmentRepository(Dictionary<string, Equipment> equipment)
-            {
-                _equipment = equipment;
-            }
-
-            public Equipment GetById(string equipmentId)
-            {
-                return _equipment.TryGetValue(equipmentId, out var equipment)
-                    ? equipment
-                    : null!;
-            }
-        }
-
         private static (FaultReportService service, Dictionary<string, Equipment> store) CreateService(
             string equipmentId = "SquatRack2")
         {
             var equipment = new Equipment(equipmentId, "Squat Rack #2");
             var store = new Dictionary<string, Equipment> { [equipmentId] = equipment };
-            var repository = new TestEquipmentRepository(store);
+            var repository = new InMemoryEquipmentRepository(store);
             var service = new FaultReportService(repository);
 
             return (service, store);

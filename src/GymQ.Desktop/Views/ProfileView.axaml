@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="GymQ.Desktop.Views.ProfileView">
+  <StackPanel Margin="22,24" Spacing="18">
+    <TextBlock Text="Profile" Classes="h1"/>
+    <TextBlock Text="Choose an account for testing." Classes="muted"/>
+    <Border Classes="card">
+      <StackPanel Spacing="12">
+        <TextBlock Text="DEMO ACCOUNT" Classes="micro"/>
+        <ComboBox ItemsSource="{Binding Accounts}" SelectedItem="{Binding Current}">
+          <ComboBox.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding Name}"/>
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+        <TextBlock Text="Switch accounts to try the member and staff sides of the same queue." Classes="muted" FontSize="12"/>
+      </StackPanel>
+    </Border>
+    <Button Content="Open staff dashboard" Classes="primary" Command="{Binding Staff}" IsVisible="{Binding IsStaff}"/>
+    <TextBlock Text="Demo controls" Classes="h2"/>
+    <TextBlock Text="Advance time to test automatic timeouts without waiting. These controls affect every account. The computer clock is unchanged." Classes="muted"/>
+    <Button Content="Advance demo time · 1 minute" Command="{Binding AdvanceOne}" Classes="outline"/>
+    <Button Content="Advance demo time · 2 minutes" Command="{Binding AdvanceTwo}" Classes="outline"/>
+    <Button Content="Advance demo time · 30 minutes" Command="{Binding AdvanceThirty}" Classes="outline"/>
+    <TextBlock Text="{Binding DemoTime}" Classes="muted"/>
+    <TextBlock Text="ABOUT THIS VERSION" Classes="micro"/>
+    <TextBlock Text="Demo accounts simulate members and staff. Data resets when you close the app." Classes="muted" FontSize="12"/>
+  </StackPanel>
+</UserControl>

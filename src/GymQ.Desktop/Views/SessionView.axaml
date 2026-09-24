@@ -1,0 +1,20 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="GymQ.Desktop.Views.SessionView">
+  <StackPanel Margin="22,12,22,26" Spacing="20">
+    <Grid ColumnDefinitions="35,*,35">
+      <Button Content="‹" Classes="quiet" Command="{Binding Back}"/>
+      <TextBlock Grid.Column="1" Text="{Binding Name,StringFormat='Using {0}'}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold"/>
+    </Grid>
+    <Image Source="{Binding Image}" Height="255" Margin="0,5"/>
+    <StackPanel Spacing="4">
+      <TextBlock Text="{Binding Headline}" Classes="h1 center"/>
+      <TextBlock Text="{Binding Name}" Classes="h1 center"/>
+    </StackPanel>
+    <StackPanel Spacing="8">
+      <TextBlock Text="{Binding Duration,StringFormat='Session duration: {0}'}" Classes="section center"/>
+      <TextBlock Text="{Binding Remaining}" Classes="muted center" FontSize="12"/>
+    </StackPanel>
+    <Button Content="End Session" Classes="primary" Command="{Binding End}" IsVisible="{Binding IsActive}" Margin="0,14,0,0"/>
+    <TextBlock Text="Finished? End your session so the next member can use the equipment." Classes="muted center"/>
+    <Button Content="Report Issue" Classes="link" Command="{Binding Report}"/>
+  </StackPanel>
+</UserControl>

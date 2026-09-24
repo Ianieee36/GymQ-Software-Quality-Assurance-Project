@@ -1,0 +1,42 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="GymQ.Desktop.Views.EquipmentView">
+  <StackPanel Margin="22,18,22,24" Spacing="15">
+    <StackPanel Spacing="6">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="Equipment" Classes="h1"/>
+        <TextBlock Grid.Column="1" Text="LIVE" Classes="micro" Foreground="#71D5A0" VerticalAlignment="Center"/>
+      </Grid>
+      <TextBlock Text="Botany Junction Club" FontSize="21"/>
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="✓  Checked in" Foreground="#71D5A0" FontSize="12"/>
+        <TextBlock Grid.Column="1" Text="{Binding Summary}" FontSize="10" Foreground="#98999F" VerticalAlignment="Center"/>
+      </Grid>
+    </StackPanel>
+    <ItemsControl ItemsSource="{Binding Cards}">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <StackPanel Spacing="12"/>
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <Border Classes="card" Padding="10,12">
+            <Grid ColumnDefinitions="104,*">
+              <Button Classes="imageButton" Command="{Binding Open}">
+                <Image Source="{Binding Image}" Width="104" Height="115" Stretch="Uniform"/>
+              </Button>
+              <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="7" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Name}" FontSize="17" FontWeight="SemiBold"/>
+                <Border Background="{Binding BadgeColour}" CornerRadius="12" Padding="8,3" HorizontalAlignment="Left">
+                  <TextBlock Text="{Binding Status}" Foreground="#151517" FontSize="9" FontWeight="Bold"/>
+                </Border>
+                <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="#BABAC0"/>
+                <Button Content="{Binding ActionLabel}" Command="{Binding Action}" Classes="primary" MinHeight="34" Padding="8,7" FontSize="12" IsVisible="{Binding CanAct}"/>
+              </StackPanel>
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <TextBlock Text="Tap a machine for details or to report an issue." Classes="muted" FontSize="11"/>
+  </StackPanel>
+</UserControl>

@@ -19,7 +19,7 @@ namespace GymQ.QueueModule
     /// Depends on: Models.Equipment, Models.Member, Models.QueueEntry
     /// Read by: Person C's SessionService (session starts when a queue claim succeeds)
     /// </summary>
-    public class QueueService
+    public partial class QueueService
     {
         // In-memory store for the prototype. One list per equipment, keyed by EquipmentId.
         // TODO: replace with proper storage/repository if the project moves beyond prototype stage.
@@ -29,9 +29,12 @@ namespace GymQ.QueueModule
         private readonly SessionService? _sessionService;
 
 
-        public QueueService(SessionService? sessionService = null)
+        private readonly TimeProvider _clock;
+
+        public QueueService(SessionService? sessionService = null, TimeProvider? clock = null)
         {
             _sessionService = sessionService;
+            _clock = clock ?? TimeProvider.System;
         }
         /// <summary>
         /// FR-001: Adds a logged-in member to the queue for the given equipment
@@ -68,7 +71,7 @@ namespace GymQ.QueueModule
                 throw new InvalidOperationException("Member is already in this equipment queue.");
             }
 
-            var entry = new QueueEntry(equipmentId, member.MemberId);
+            var entry = new QueueEntry(equipmentId, member.MemberId) { JoinedAt = _clock.GetUtcNow().UtcDateTime };
 
             queue.Add(entry);
 
@@ -104,7 +107,7 @@ namespace GymQ.QueueModule
         {
             // TODO:
             // 1. Get the front-of-queue entry for equipmentId (if any)
-            // 2. Set NotifiedAt = DateTime.UtcNow on that entry (used by EnforceClaimTimeout)
+            // 2. Set NotifiedAt = _clock.GetUtcNow().UtcDateTime on that entry (used by EnforceClaimTimeout)
             // 3. Send an in-app notification to that member (notification mechanism TBD — stub for now)
             // 4. If queue is empty, equipment simply stays Available with no notification
             
@@ -119,7 +122,7 @@ namespace GymQ.QueueModule
             // Once the next member is notified, we record the time of notification.
             if (nextMember.NotifiedAt == null)
             {
-                nextMember.NotifiedAt = DateTime.UtcNow;
+                nextMember.NotifiedAt = _clock.GetUtcNow().UtcDateTime;
             }
             // Notification mechanism will be integrated later.
 
@@ -159,7 +162,7 @@ namespace GymQ.QueueModule
                 return false;
             }
 
-            var now = DateTime.UtcNow;
+            var now = _clock.GetUtcNow().UtcDateTime;
 
             if (_lastNudgeAt.TryGetValue(equipmentId, out var lastNudgeAt) &&
                 now - lastNudgeAt < TimeSpan.FromMinutes(5))
@@ -222,7 +225,7 @@ namespace GymQ.QueueModule
             if (entry == null || entry.NotifiedAt == null)
                 return;
 
-            var elapsed = DateTime.UtcNow - entry.NotifiedAt.Value;
+            var elapsed = _clock.GetUtcNow().UtcDateTime - entry.NotifiedAt.Value;
 
             if (elapsed < TimeSpan.FromMinutes(2))
                 return;
@@ -263,7 +266,7 @@ namespace GymQ.QueueModule
                 return false;
 
             // Must still be inside the 2-minute claim window
-            var elapsed = DateTime.UtcNow - entry.NotifiedAt.Value;
+            var elapsed = _clock.GetUtcNow().UtcDateTime - entry.NotifiedAt.Value;
 
             if (elapsed >= TimeSpan.FromMinutes(2))
                 return false;

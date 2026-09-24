@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="GymQ.Desktop.Views.ReportView">
+  <StackPanel Margin="22,12,22,26" Spacing="18">
+    <Button Content="‹  Equipment" Classes="quiet" Command="{Binding Back}" HorizontalAlignment="Left"/>
+    <TextBlock Text="Report an issue" Classes="h1"/>
+    <TextBlock Text="A better club starts with looking out for each other." Classes="muted"/>
+    <Border Classes="card">
+      <Grid ColumnDefinitions="90,*">
+        <Image Source="{Binding Image}" Height="90"/>
+        <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="8" VerticalAlignment="Center">
+          <TextBlock Text="EQUIPMENT" Classes="micro"/>
+          <ComboBox ItemsSource="{Binding Machines}" SelectedItem="{Binding Selected}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding Name}" FontSize="12"/>
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+        </StackPanel>
+      </Grid>
+    </Border>
+    <TextBlock Text="Describe the problem" Classes="section"/>
+    <TextBox Name="ReportDescription" Text="{Binding Description}" Watermark="e.g. machine feels unbalanced, unusual noise or a broken part" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="190" MaxLength="2000"/>
+    <TextBlock Text="Your report goes directly to gym staff for review." Classes="muted" FontSize="12"/>
+    <Button Content="SUBMIT REPORT" Classes="primary" Command="{Binding Submit}"/>
+  </StackPanel>
+</UserControl>
