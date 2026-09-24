@@ -1,1 +1,5 @@
-using Avalonia.Controls; namespace GymQ.Desktop.Views; public partial class NudgeOverlayView : UserControl { public NudgeOverlayView() => InitializeComponent(); }
+using Avalonia.Controls; 
+namespace GymQ.Desktop.Views; 
+public partial class NudgeOverlayView : UserControl { 
+    public NudgeOverlayView() => InitializeComponent(); 
+}

@@ -1,1 +1,5 @@
-using Avalonia.Controls; namespace GymQ.Desktop.Views; public partial class EquipmentView : UserControl { public EquipmentView() => InitializeComponent(); }
+using Avalonia.Controls; 
+namespace GymQ.Desktop.Views; 
+public partial class EquipmentView : UserControl { 
+    public EquipmentView() => InitializeComponent(); 
+}

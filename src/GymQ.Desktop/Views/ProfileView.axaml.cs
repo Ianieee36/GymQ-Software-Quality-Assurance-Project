@@ -1,1 +1,5 @@
-using Avalonia.Controls; namespace GymQ.Desktop.Views; public partial class ProfileView : UserControl { public ProfileView() => InitializeComponent(); }
+using Avalonia.Controls; 
+namespace GymQ.Desktop.Views; 
+public partial class ProfileView : UserControl { 
+    public ProfileView() => InitializeComponent(); 
+}

@@ -1,1 +1,5 @@
-using Avalonia.Controls; namespace GymQ.Desktop.Views; public partial class StaffView : UserControl { public StaffView() => InitializeComponent(); }
+using Avalonia.Controls; 
+namespace GymQ.Desktop.Views; 
+public partial class StaffView : UserControl { 
+    public StaffView() => InitializeComponent(); 
+}

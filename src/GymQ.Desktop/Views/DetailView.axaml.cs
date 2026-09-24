@@ -1,1 +1,5 @@
-using Avalonia.Controls; namespace GymQ.Desktop.Views; public partial class DetailView : UserControl { public DetailView() => InitializeComponent(); }
+using Avalonia.Controls; 
+namespace GymQ.Desktop.Views; 
+public partial class DetailView : UserControl { 
+    public DetailView() => InitializeComponent(); 
+}

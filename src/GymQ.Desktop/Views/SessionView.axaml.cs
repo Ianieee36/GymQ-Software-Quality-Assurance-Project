@@ -1,1 +1,5 @@
-using Avalonia.Controls; namespace GymQ.Desktop.Views; public partial class SessionView : UserControl { public SessionView() => InitializeComponent(); }
+using Avalonia.Controls; 
+namespace GymQ.Desktop.Views; 
+public partial class SessionView : UserControl { 
+    public SessionView() => InitializeComponent(); 
+}

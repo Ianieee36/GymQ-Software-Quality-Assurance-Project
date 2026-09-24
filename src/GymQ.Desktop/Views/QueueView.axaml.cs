@@ -1,1 +1,5 @@
-using Avalonia.Controls; namespace GymQ.Desktop.Views; public partial class QueueView : UserControl { public QueueView() => InitializeComponent(); }
+using Avalonia.Controls; 
+namespace GymQ.Desktop.Views; 
+public partial class QueueView : UserControl { 
+    public QueueView() => InitializeComponent(); 
+}
