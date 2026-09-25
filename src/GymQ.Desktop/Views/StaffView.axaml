@@ -1,12 +1,19 @@
-<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="GymQ.Desktop.Views.StaffView">
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GymQ.Desktop.ViewModels"
+             x:Class="GymQ.Desktop.Views.StaffView"
+             x:DataType="vm:StaffViewModel">
   <StackPanel Margin="22,18,22,24" Spacing="18">
-    <TextBlock Text="Staff dashboard" Classes="h1"/>
+    <Grid ColumnDefinitions="*,Auto">
+      <TextBlock Text="Staff dashboard" Classes="h1"/>
+      <Button Grid.Column="1" Content="Log out" Classes="outline" Command="{Binding LogOut}" VerticalAlignment="Center"/>
+    </Grid>
     <TextBlock Text="Equipment status and member reports." Classes="muted"/>
     <StackPanel IsVisible="{Binding IsStaff}" Spacing="16">
       <TextBlock Text="Equipment status" Classes="section"/>
       <ItemsControl ItemsSource="{Binding Equipment}">
         <ItemsControl.ItemTemplate>
-          <DataTemplate>
+          <DataTemplate x:DataType="vm:StaffEquipment">
             <Border Classes="card" Margin="0,0,0,10">
               <StackPanel Spacing="10">
                 <Grid ColumnDefinitions="*,Auto">
@@ -15,7 +22,6 @@
                     <TextBlock Text="{Binding Card.Status}" Foreground="#151517" FontSize="8" FontWeight="Bold"/>
                   </Border>
                 </Grid>
-                
               </StackPanel>
             </Border>
           </DataTemplate>
@@ -25,7 +31,7 @@
       <TextBlock Text="All caught up. No reports waiting for review." Classes="muted" IsVisible="{Binding NoReports}"/>
       <ItemsControl ItemsSource="{Binding Reports}">
         <ItemsControl.ItemTemplate>
-          <DataTemplate>
+          <DataTemplate x:DataType="vm:StaffReport">
             <Border Classes="card" Margin="0,0,0,12">
               <StackPanel Spacing="12">
                 <TextBlock Text="{Binding Name}" Classes="section"/>
@@ -41,6 +47,6 @@
         </ItemsControl.ItemTemplate>
       </ItemsControl>
     </StackPanel>
-    <TextBlock Text="Select Gym Staff in Profile to view this screen." IsVisible="{Binding !IsStaff}"/>
+    <TextBlock Text="Staff access only. Log in with a staff account to view this screen." IsVisible="{Binding !IsStaff}"/>
   </StackPanel>
 </UserControl>

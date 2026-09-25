@@ -1,4 +1,4 @@
-namespace GymQ.SessionModule;
+namespace GymQ.Services;
 public partial class SessionService
 {
     public UsageSession? ReadActiveSession(string equipmentId)

@@ -6,7 +6,7 @@ using System.Threading;
 using GymQ.Models;
 using GymQ.Repository;
 
-namespace GymQ.FaultModule
+namespace GymQ.Services
 {
     // Status of a fault report as it moves through staff review.
     // Pending -> Confirmed (becomes a formal maintenance report, FR-007)

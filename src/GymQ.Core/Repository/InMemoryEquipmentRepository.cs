@@ -13,7 +13,8 @@ public sealed class InMemoryEquipmentRepository : IEquipmentRepository
     }
 
     public Equipment? GetById(string equipmentId)
-        => _equipment.TryGetValue(equipmentId, out var equipment) ? equipment : null;
-
+        => string.IsNullOrWhiteSpace(equipmentId)
+            ? null
+            : _equipment.TryGetValue(equipmentId, out var equipment) ? equipment : null;
     public List<Equipment> GetAll() => _equipment.Values.ToList();
 }

@@ -2,9 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using GymQ.Models;
-using GymQ.SessionModule;
 
-namespace GymQ.QueueModule
+namespace GymQ.Services
 {
     /// <summary>
     /// PERSON A — Queue Management Module

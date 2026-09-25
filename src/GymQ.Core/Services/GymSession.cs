@@ -1,10 +1,7 @@
 using GymQ.Models;
-using GymQ.QueueModule;
-using GymQ.SessionModule;
-using GymQ.FaultModule;
 using GymQ.Repository;
 
-namespace GymQ.Application;
+namespace GymQ.Services;
 
 /// <summary>
 /// Coordinates UI actions through the team's services and shared in-memory repository.
@@ -20,9 +17,21 @@ public sealed class GymSession
     };
     public List<Member> Members { get; } = new()
     {
-        new("M001", "Lorenz Soriano"), new("M002", "Christian Cantos"),
-        new("M003", "Jayden Marsh"), new("M004", "John Smith"), new("S001", "Gym Staff", true)
+        new("M001","Lorenz_Soriano", "LS123", "Lorenz Soriano", false), 
+        new("M002","Christian_Cantos", "CS123", "Christian Cantos", false),
+        new("M003","Jayden_Marsh", "JM123", "Jayden Marsh", false), 
+        new("S001","Gym_Staff", "GS123", "Gym Staff", true)
     };
+
+    // Credential checks for the login screen. Built from Members in the constructor.
+    private readonly IUserService _users;
+
+    /// <summary>Returns the matching account, or null if the username or password is wrong.</summary>
+    public Member? Login(string userName, string password) => _users.Login(userName, password);
+
+    public Member FindMember(string memberId) =>
+        Members.FirstOrDefault(m => m.MemberId == memberId)
+        ?? throw new ArgumentException($"No member found with ID '{memberId}'.", nameof(memberId));
 
     // Services are initialized with the shared in-memory repository.
 
@@ -53,6 +62,7 @@ public sealed class GymSession
     // The seed parameter allows the desktop shell to start with a pre-populated session and fault report for demonstration purposes.
     public GymSession(bool seed = true)
     {
+        _users = new UserService(new InMemoryUserRepository(Members));
         var repository = new InMemoryEquipmentRepository(Equipment);
         Sessions = new(repository, _clock);
         Queue = new(Sessions, _clock);
@@ -60,8 +70,9 @@ public sealed class GymSession
         if (seed)
         {
             Sessions.StartSession("E2", "M002");
-            var report = Faults.SubmitFaultReport("E3", Members[3], "Resistance mechanism needs inspection.");
-            Faults.ReviewFaultReport(report.ReportId, Members[4], true);
+            // Look accounts up by ID so reordering Members cannot break the seed.
+            var report = Faults.SubmitFaultReport("E3", FindMember("M003"), "Resistance mechanism needs inspection.");
+            Faults.ReviewFaultReport(report.ReportId, FindMember("S001"), true);
             Reports.Add(report);
         }
     }

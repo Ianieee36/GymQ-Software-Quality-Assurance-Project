@@ -1,4 +1,4 @@
-namespace GymQ.Application;
+namespace GymQ.Services;
 
 /// <summary>Real time plus a local testing offset; never changes the system clock.</summary>
 public sealed class DemoClock : TimeProvider

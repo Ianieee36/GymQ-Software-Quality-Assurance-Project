@@ -1,14 +1,15 @@
 using System.Collections.ObjectModel;
 using GymQ.Desktop.Presentation;
-using GymQ.FaultModule;
+using GymQ.Services;
 using GymQ.Models;
 namespace GymQ.Desktop.ViewModels;
 public sealed class ProfileViewModel : PageViewModel
 {
-    public List<Member> Accounts => Shell.Accounts;
-    public Member Current { get => Shell.Current; set => Shell.Current = value; }
-    public bool IsStaff => Current.IsStaff;
-    public ActionCommand Staff { get; }
+    // Account details for the signed-in member. Switching accounts is done by logging out.
+    public string Name => Shell.Current.Name;
+    public string UserName => Shell.Current.UserName;
+    public string AccountRole => Shell.AccountRole;
+    public ActionCommand LogOut => Shell.LogOut;
     public ActionCommand AdvanceOne { get; }
     public ActionCommand AdvanceTwo { get; }
     public ActionCommand AdvanceThirty { get; }
@@ -16,7 +17,6 @@ public sealed class ProfileViewModel : PageViewModel
     public override void Refresh() => Notify(nameof(DemoTime));
     public ProfileViewModel(ShellViewModel shell) : base(shell)
     {
-        Staff = new(() => shell.Navigate("staff"));
         AdvanceOne = new(() => shell.Perform(() => shell.Gym.AdvanceDemoTime(1)));
         AdvanceTwo = new(() => shell.Perform(() => shell.Gym.AdvanceDemoTime(2)));
         AdvanceThirty = new(() => shell.Perform(() => shell.Gym.AdvanceDemoTime(30)));
@@ -25,7 +25,10 @@ public sealed class ProfileViewModel : PageViewModel
 
 public sealed class StaffViewModel : PageViewModel
 {
-    public bool IsStaff => Shell.Current.IsStaff;
+    // Second line of defence: the shell already routes non-staff away from this page,
+    // and FaultReportService still checks IsStaff on every review.
+    public bool IsStaff => Shell.IsStaff;
+    public ActionCommand LogOut => Shell.LogOut;
     public ObservableCollection<StaffReport> Reports { get; } = new();
     public ObservableCollection<StaffEquipment> Equipment { get; } = new();
     public string PendingLabel => "Pending reports · " + Reports.Count;

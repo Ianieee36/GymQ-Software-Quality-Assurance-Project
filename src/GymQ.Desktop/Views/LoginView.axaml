@@ -1,0 +1,27 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="GymQ.Desktop.Views.LoginView">
+  <!-- Enter submits the form from either text box -->
+  <UserControl.KeyBindings>
+    <KeyBinding Gesture="Enter" Command="{Binding LogIn}"/>
+  </UserControl.KeyBindings>
+  <StackPanel Margin="22,64,22,26" Spacing="18">
+    <StackPanel HorizontalAlignment="Center" Spacing="0" Margin="0,0,0,18">
+      <TextBlock Text="jetts" FontWeight="Bold" FontStyle="Italic" FontSize="44" HorizontalAlignment="Center"/>
+      <TextBlock Text="GYMQ" FontSize="11" LetterSpacing="3" Foreground="#F04A67" HorizontalAlignment="Center"/>
+    </StackPanel>
+    <TextBlock Text="Log in" Classes="h1"/>
+    <TextBlock Text="Sign in with your gym account. Members see the equipment queue; staff see the staff dashboard." Classes="muted"/>
+    <Border Classes="card">
+      <StackPanel Spacing="12">
+        <TextBlock Text="USERNAME" Classes="micro"/>
+        <TextBox Name="UserNameBox" Text="{Binding UserName}" Watermark="e.g. Lorenz_Soriano" MaxLength="64" AutomationProperties.Name="Username"/>
+        <TextBlock Text="PASSWORD" Classes="micro"/>
+        <TextBox Name="PasswordBox" Text="{Binding Password}" PasswordChar="•" MaxLength="128" AutomationProperties.Name="Password"/>
+      </StackPanel>
+    </Border>
+    <Border Background="#482430" CornerRadius="10" Padding="12" IsVisible="{Binding HasMessage}">
+      <TextBlock Name="LoginMessage" Text="{Binding Message}" Foreground="#FFB7C5" FontSize="12"/>
+    </Border>
+    <Button Content="LOG IN" Classes="primary" Command="{Binding LogIn}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+    <TextBlock Text="Demo accounts reset when the app closes." Classes="muted" FontSize="12" HorizontalAlignment="Center"/>
+  </StackPanel>
+</UserControl>

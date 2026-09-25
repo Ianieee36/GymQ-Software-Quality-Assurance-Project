@@ -4,7 +4,7 @@ using System.Linq;
 using GymQ.Models;
 using GymQ.Repository;
 
-namespace GymQ.SessionModule
+namespace GymQ.Services
 {
     /// <summary>
     /// Why a session ended — useful for reporting and for debugging test failures

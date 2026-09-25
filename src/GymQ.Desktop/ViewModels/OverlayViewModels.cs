@@ -1,5 +1,5 @@
 using Avalonia.Media.Imaging;
-using GymQ.Application;
+using GymQ.Services;
 using GymQ.Models;
 using GymQ.Desktop.Presentation;
 namespace GymQ.Desktop.ViewModels;

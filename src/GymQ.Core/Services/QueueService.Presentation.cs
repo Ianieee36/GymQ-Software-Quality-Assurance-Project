@@ -1,5 +1,5 @@
 using GymQ.Models;
-namespace GymQ.QueueModule;
+namespace GymQ.Services;
 public partial class QueueService
 {
     public IReadOnlyList<QueueEntry> ReadQueue(string equipmentId) =>
