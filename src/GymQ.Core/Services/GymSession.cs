@@ -18,7 +18,7 @@ public sealed class GymSession
     public List<Member> Members { get; } = new()
     {
         new("M001","Lorenz_Soriano", "LS123", "Lorenz Soriano", false), 
-        new("M002","Christian_Cantos", "CS123", "Christian Cantos", false),
+        new("M002","Christian_Cantos", "CC123", "Christian Cantos", false),
         new("M003","Jayden_Marsh", "JM123", "Jayden Marsh", false), 
         new("S001","Gym_Staff", "GS123", "Gym Staff", true)
     };

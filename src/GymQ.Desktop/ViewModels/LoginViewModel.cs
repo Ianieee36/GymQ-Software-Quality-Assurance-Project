@@ -20,6 +20,11 @@ public sealed class LoginViewModel : PageViewModel
 
     public ActionCommand LogIn { get; }
 
+    // Commands for demo logins, to save us from typing credentials repeatedly.
+    public ActionCommand LogInAsStaff {  get; }
+    public ActionCommand LogInAsUserJayden { get; }
+    public ActionCommand LogInAsUserChris { get; }
+
     public LoginViewModel(ShellViewModel shell) : base(shell)
     {
         LogIn = new(() =>
@@ -40,6 +45,30 @@ public sealed class LoginViewModel : PageViewModel
                 return;
             }
 
+            shell.SignIn(account);
+        });
+
+        LogInAsStaff = new(() =>
+        {
+            UserName = "Gym_Staff";
+            Password = "GS123";
+            var account = shell.Gym.Login(UserName, Password);
+            shell.SignIn(account);
+        });
+
+        LogInAsUserJayden = new(() =>
+        {
+            UserName = "Jayden_Marsh";
+            Password = "JM123";
+            var account = shell.Gym.Login(UserName, Password);
+            shell.SignIn(account);
+        });
+
+        LogInAsUserChris = new(() =>
+        {
+            UserName = "Christian_Cantos";
+            Password = "CC123";
+            var account = shell.Gym.Login(UserName, Password);
             shell.SignIn(account);
         });
     }
