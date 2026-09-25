@@ -48,6 +48,8 @@ public sealed class LoginViewModel : PageViewModel
             shell.SignIn(account);
         });
 
+
+        // Demo account quick logins
         LogInAsStaff = new(() =>
         {
             UserName = "Gym_Staff";
