@@ -1,7 +1,5 @@
-using GymQ.Application;
+using GymQ.Services;
 using GymQ.Models;
-using GymQ.SessionModule;
-using GymQ.QueueModule;
 using System.Reflection;
 namespace GymQ.Tests;
 [TestClass]
@@ -45,7 +43,7 @@ public class GymSessionIntegrationTests
     public void FaultConfirmation_PreservesOriginalActiveSessionBehaviour()
     {
         var g = new GymSession(); g.Report("E2", g.Members[0], "Broken handle");
-        var report = g.Faults.GetPendingReports().Single(); g.Review(report.ReportId, g.Members[4], true);
+        var report = g.Faults.GetPendingReports().Single(); g.Review(report.ReportId, g.FindMember("S001"), true);
         Assert.IsNotNull(g.Sessions.ReadActiveSession("E2"));
         Assert.AreEqual(EquipmentStatus.Unavailable, g.Equipment["E2"].Status);
         g.Finish("E2", g.Members[1]); Assert.AreEqual(EquipmentStatus.Unavailable, g.Equipment["E2"].Status);

@@ -1,7 +1,7 @@
 using GymQ.Repository;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using GymQ.Models;
-using GymQ.FaultModule;
+using GymQ.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,7 +28,7 @@ namespace GymQ.Tests
         public void SubmitFaultReport_ValidInput_ReturnsPendingReport()
         {
             var (service, _) = CreateService();
-            var member = new Member("M001", "Enzo");
+            var member = new Member("M001", "M001", "TestPassword123", "Enzo");
 
             var report = service.SubmitFaultReport("SquatRack2", member, "Cable feels loose");
 
@@ -42,7 +42,7 @@ namespace GymQ.Tests
         public void SubmitFaultReport_MultipleReports_AssignsUniqueReportIds()
         {
             var (service, _) = CreateService();
-            var member = new Member("M001", "Enzo");
+            var member = new Member("M001", "M001", "TestPassword123", "Enzo");
 
             var first = service.SubmitFaultReport("SquatRack2", member, "Loose cable");
             var second = service.SubmitFaultReport("SquatRack2", member, "Squeaky pulley");
@@ -54,7 +54,7 @@ namespace GymQ.Tests
         public void SubmitFaultReport_EmptyEquipmentId_ThrowsArgumentException()
         {
             var (service, _) = CreateService();
-            var member = new Member("M001", "Enzo");
+            var member = new Member("M001", "M001", "TestPassword123", "Enzo");
 
             Assert.ThrowsExactly<ArgumentException>(
                 () => service.SubmitFaultReport(" ", member, "Loose cable"));
@@ -73,7 +73,7 @@ namespace GymQ.Tests
         public void SubmitFaultReport_EmptyDescription_ThrowsArgumentException()
         {
             var (service, _) = CreateService();
-            var member = new Member("M001", "Enzo");
+            var member = new Member("M001", "M001", "TestPassword123", "Enzo");
 
             Assert.ThrowsExactly<ArgumentException>(
                 () => service.SubmitFaultReport("SquatRack2", member, " "));
@@ -85,8 +85,8 @@ namespace GymQ.Tests
         public void ReviewFaultReport_StaffConfirms_ReportStatusBecomesConfirmed()
         {
             var (service, _) = CreateService();
-            var member = new Member("M001", "Enzo");
-            var staff = new Member("S001", "Staff Steph", isStaff: true);
+            var member = new Member("M001", "M001", "TestPassword123", "Enzo");
+            var staff = new Member("S001", "S001", "TestPassword123", "Staff Steph", isStaff: true);
 
             var report = service.SubmitFaultReport("SquatRack2", member, "Loose cable");
             service.ReviewFaultReport(report.ReportId, staff, confirm: true);
@@ -100,8 +100,8 @@ namespace GymQ.Tests
         public void ReviewFaultReport_StaffRejects_ReportStatusBecomesRejected()
         {
             var (service, _) = CreateService();
-            var member = new Member("M001", "Enzo");
-            var staff = new Member("S001", "Staff Steph", isStaff: true);
+            var member = new Member("M001", "M001", "TestPassword123", "Enzo");
+            var staff = new Member("S001", "S001", "TestPassword123", "Staff Steph", isStaff: true);
 
             var report = service.SubmitFaultReport("SquatRack2", member, "Loose cable");
             service.ReviewFaultReport(report.ReportId, staff, confirm: false);
@@ -113,8 +113,8 @@ namespace GymQ.Tests
         public void ReviewFaultReport_NonStaffMember_ThrowsUnauthorizedAccessException()
         {
             var (service, _) = CreateService();
-            var member = new Member("M001", "Enzo");
-            var notStaff = new Member("M002", "Mia", isStaff: false);
+            var member = new Member("M001", "M001", "TestPassword123", "Enzo");
+            var notStaff = new Member("M002", "M002", "TestPassword123", "Mia", isStaff: false);
 
             var report = service.SubmitFaultReport("SquatRack2", member, "Loose cable");
 
@@ -126,7 +126,7 @@ namespace GymQ.Tests
         public void ReviewFaultReport_UnknownReportId_ThrowsArgumentException()
         {
             var (service, _) = CreateService();
-            var staff = new Member("S001", "Staff Steph", isStaff: true);
+            var staff = new Member("S001", "S001", "TestPassword123", "Staff Steph", isStaff: true);
 
             Assert.ThrowsExactly<ArgumentException>(
                 () => service.ReviewFaultReport("R-999", staff, confirm: true));
@@ -136,8 +136,8 @@ namespace GymQ.Tests
         public void ReviewFaultReport_AlreadyReviewedReport_ThrowsInvalidOperationException()
         {
             var (service, _) = CreateService();
-            var member = new Member("M001", "Enzo");
-            var staff = new Member("S001", "Staff Steph", isStaff: true);
+            var member = new Member("M001", "M001", "TestPassword123", "Enzo");
+            var staff = new Member("S001", "S001", "TestPassword123", "Staff Steph", isStaff: true);
 
             var report = service.SubmitFaultReport("SquatRack2", member, "Loose cable");
             service.ReviewFaultReport(report.ReportId, staff, confirm: true);
@@ -152,8 +152,8 @@ namespace GymQ.Tests
         public void ReviewFaultReport_Confirmed_SetsEquipmentStatusUnavailable()
         {
             var (service, store) = CreateService();
-            var member = new Member("M001", "Enzo");
-            var staff = new Member("S001", "Staff Steph", isStaff: true);
+            var member = new Member("M001", "M001", "TestPassword123", "Enzo");
+            var staff = new Member("S001", "S001", "TestPassword123", "Staff Steph", isStaff: true);
 
             var report = service.SubmitFaultReport("SquatRack2", member, "Loose cable");
             service.ReviewFaultReport(report.ReportId, staff, confirm: true);
@@ -165,8 +165,8 @@ namespace GymQ.Tests
         public void ReviewFaultReport_Rejected_DoesNotChangeEquipmentStatus()
         {
             var (service, store) = CreateService();
-            var member = new Member("M001", "Enzo");
-            var staff = new Member("S001", "Staff Steph", isStaff: true);
+            var member = new Member("M001", "M001", "TestPassword123", "Enzo");
+            var staff = new Member("S001", "S001", "TestPassword123", "Staff Steph", isStaff: true);
 
             var report = service.SubmitFaultReport("SquatRack2", member, "Loose cable");
             service.ReviewFaultReport(report.ReportId, staff, confirm: false);
@@ -189,8 +189,8 @@ namespace GymQ.Tests
         public void GetPendingReports_MixOfStatuses_ReturnsOnlyPendingReports()
         {
             var (service, _) = CreateService();
-            var member = new Member("M001", "Enzo");
-            var staff = new Member("S001", "Staff Steph", isStaff: true);
+            var member = new Member("M001", "M001", "TestPassword123", "Enzo");
+            var staff = new Member("S001", "S001", "TestPassword123", "Staff Steph", isStaff: true);
 
             var pending = service.SubmitFaultReport("SquatRack2", member, "Loose cable");
             var reviewed = service.SubmitFaultReport("SquatRack2", member, "Squeaky pulley");

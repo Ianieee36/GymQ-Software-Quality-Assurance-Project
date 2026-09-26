@@ -54,24 +54,21 @@ public sealed class LoginViewModel : PageViewModel
         {
             UserName = "Gym_Staff";
             Password = "GS123";
-            var account = shell.Gym.Login(UserName, Password);
-            shell.SignIn(account);
+            LogIn.Execute(null);
         });
 
         LogInAsUserJayden = new(() =>
         {
             UserName = "Jayden_Marsh";
             Password = "JM123";
-            var account = shell.Gym.Login(UserName, Password);
-            shell.SignIn(account);
+            LogIn.Execute(null);
         });
 
         LogInAsUserChris = new(() =>
         {
             UserName = "Christian_Cantos";
             Password = "CC123";
-            var account = shell.Gym.Login(UserName, Password);
-            shell.SignIn(account);
+            LogIn.Execute(null);
         });
     }
 }
