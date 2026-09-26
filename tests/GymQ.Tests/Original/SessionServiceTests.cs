@@ -1,6 +1,6 @@
 using GymQ.Repository;
 using GymQ.Models;
-using GymQ.SessionModule;
+using GymQ.Services;
 
 namespace GymQ_ENSE707_SQA_MSTest
 {

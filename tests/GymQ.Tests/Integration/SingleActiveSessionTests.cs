@@ -1,6 +1,5 @@
-using GymQ.Application;
+using GymQ.Services;
 using GymQ.Models;
-using GymQ.SessionModule;
 
 namespace GymQ.Tests;
 

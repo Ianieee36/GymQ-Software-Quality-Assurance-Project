@@ -1,8 +1,7 @@
 using GymQ.Repository;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using GymQ.Models;
-using GymQ.QueueModule;
-using GymQ.SessionModule;
+using GymQ.Services;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -18,7 +17,7 @@ namespace GymQ.Tests
         public void JoinQueue_FirstMember_ReturnsPositionOne()
         {
             var service = new QueueService();
-            var member = new Member("M001", "Enzo");
+            var member = new Member("M001", "M001", "TestPassword123", "Enzo");
 
             var position = service.JoinQueue("SquatRack2", member);
 
@@ -30,8 +29,8 @@ namespace GymQ.Tests
         {
             var service = new QueueService();
 
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
-            var position = service.JoinQueue("SquatRack2", new Member("M002", "Mia"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
+            var position = service.JoinQueue("SquatRack2", new Member("M002", "M002", "TestPassword123", "Mia"));
 
             Assert.AreEqual(2, position);
         }
@@ -41,8 +40,8 @@ namespace GymQ.Tests
         {
             var service = new QueueService();
 
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
-            service.JoinQueue("SquatRack2", new Member("M002", "Mia"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M002", "M002", "TestPassword123", "Mia"));
 
             Assert.AreEqual(
                 2,
@@ -54,7 +53,7 @@ namespace GymQ.Tests
         {
             var service = new QueueService();
 
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
 
             Assert.IsNull(service.GetQueuePosition("SquatRack2", "M999"));
         }
@@ -72,7 +71,7 @@ namespace GymQ.Tests
         public void JoinQueue_DuplicateMember_ThrowsInvalidOperationException()
         {
             var service = new QueueService();
-            var member = new Member("M001", "Enzo");
+            var member = new Member("M001", "M001", "TestPassword123", "Enzo");
 
             service.JoinQueue("SquatRack2", member);
 
@@ -84,7 +83,7 @@ namespace GymQ.Tests
         public void JoinQueue_DuplicateMember_DoesNotChangeQueuePosition()
         {
             var service = new QueueService();
-            var member = new Member("M001", "Enzo");
+            var member = new Member("M001", "M001", "TestPassword123", "Enzo");
 
             service.JoinQueue("SquatRack2", member);
 
@@ -100,7 +99,7 @@ namespace GymQ.Tests
         public void JoinQueue_SameMemberForDifferentEquipment_IsAllowed()
         {
             var service = new QueueService();
-            var member = new Member("M001", "Enzo");
+            var member = new Member("M001", "M001", "TestPassword123", "Enzo");
 
             var firstPosition = service.JoinQueue("SquatRack1", member);
             var secondPosition = service.JoinQueue("SquatRack2", member);
@@ -113,7 +112,7 @@ namespace GymQ.Tests
         public void JoinQueue_EmptyEquipmentId_ThrowsArgumentException()
         {
             var service = new QueueService();
-            var member = new Member("M001", "Enzo");
+            var member = new Member("M001", "M001", "TestPassword123", "Enzo");
 
             Assert.ThrowsExactly<ArgumentException>(
                 () => service.JoinQueue(" ", member));
@@ -132,7 +131,7 @@ namespace GymQ.Tests
         public void NotifyNextInQueue_QueueHasMembers_SetsFrontMemberNotifiedAt()
         {
             var service = new QueueService();
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
 
             var before = DateTime.UtcNow;
 
@@ -151,8 +150,8 @@ namespace GymQ.Tests
         public void NotifyNextInQueue_QueueHasMultipleMembers_NotifiesOnlyFrontMember()
         {
             var service = new QueueService();
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
-            service.JoinQueue("SquatRack2", new Member("M002", "Mia"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M002", "M002", "TestPassword123", "Mia"));
 
             service.NotifyNextInQueue("SquatRack2");
 
@@ -209,7 +208,7 @@ namespace GymQ.Tests
         {
             var service = new QueueService();
 
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
 
             var result = service.SendNudge("SquatRack2", "M001");
 
@@ -221,8 +220,8 @@ namespace GymQ.Tests
         {
             var service = new QueueService();
 
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
-            service.JoinQueue("SquatRack2", new Member("M002", "Mia"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M002", "M002", "TestPassword123", "Mia"));
 
             var result = service.SendNudge("SquatRack2", "M002");
 
@@ -255,7 +254,7 @@ namespace GymQ.Tests
         {
             var service = new QueueService();
 
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
 
             Assert.IsTrue(service.SendNudge("SquatRack2", "M001"));
 
@@ -269,8 +268,8 @@ namespace GymQ.Tests
         {
             var service = new QueueService();
 
-            service.JoinQueue("SquatRack1", new Member("M001", "Enzo"));
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.JoinQueue("SquatRack1", new Member("M001", "M001", "TestPassword123", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
 
             Assert.IsTrue(service.SendNudge("SquatRack1", "M001"));
             Assert.IsTrue(service.SendNudge("SquatRack2", "M001"));
@@ -280,7 +279,7 @@ namespace GymQ.Tests
         public void EnforceClaimTimeout_NotifiedMemberHasTimedOut_RemovesMember()
         {
             var service = new QueueService();
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
             service.NotifyNextInQueue("SquatRack2");
 
             var entry = GetQueueEntries(service, "SquatRack2")[0];
@@ -295,7 +294,7 @@ namespace GymQ.Tests
         public void EnforceClaimTimeout_NotifiedMemberHasNotTimedOut_KeepsMemberInQueue()
         {
             var service = new QueueService();
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
             service.NotifyNextInQueue("SquatRack2");
 
             var entry = GetQueueEntries(service, "SquatRack2")[0];
@@ -310,7 +309,7 @@ namespace GymQ.Tests
         public void EnforceClaimTimeout_MemberWasNeverNotified_KeepsMemberInQueue()
         {
             var service = new QueueService();
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
 
             service.EnforceClaimTimeout("SquatRack2", "M001");
 
@@ -332,7 +331,7 @@ namespace GymQ.Tests
         public void EnforceClaimTimeout_MemberIsNotQueued_DoesNothing()
         {
             var service = new QueueService();
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
 
             service.EnforceClaimTimeout("SquatRack2", "M999");
 
@@ -344,8 +343,8 @@ namespace GymQ.Tests
         {
             var service = new QueueService();
 
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
-            service.JoinQueue("SquatRack2", new Member("M002", "Mia"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M002", "M002", "TestPassword123", "Mia"));
             service.NotifyNextInQueue("SquatRack2");
 
             var entries = GetQueueEntries(service, "SquatRack2");
@@ -378,7 +377,7 @@ namespace GymQ.Tests
 
             queueService.JoinQueue(
                 "SquatRack2",
-                new Member("M002", "Mia"));
+                new Member("M002", "M002", "TestPassword123", "Mia"));
 
             queueService.HandleNudgeResponse(
                 "SquatRack2",
@@ -407,7 +406,7 @@ namespace GymQ.Tests
             var sessionService = new SessionService(new InMemoryEquipmentRepository(equipmentStore));
             var service = new QueueService(sessionService);
 
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
             service.NotifyNextInQueue("SquatRack2");
 
             var result = service.ClaimEquipment("SquatRack2", "M001");
@@ -428,7 +427,7 @@ namespace GymQ.Tests
             var sessionService = new SessionService(new InMemoryEquipmentRepository(equipmentStore));
             var service = new QueueService(sessionService);
 
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
             service.NotifyNextInQueue("SquatRack2");
 
             service.ClaimEquipment("SquatRack2", "M001");
@@ -449,7 +448,7 @@ namespace GymQ.Tests
             var sessionService = new SessionService(new InMemoryEquipmentRepository(equipmentStore));
             var service = new QueueService(sessionService);
 
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
             service.NotifyNextInQueue("SquatRack2");
 
             service.ClaimEquipment("SquatRack2", "M001");
@@ -470,8 +469,8 @@ namespace GymQ.Tests
             var sessionService = new SessionService(new InMemoryEquipmentRepository(equipmentStore));
             var service = new QueueService(sessionService);
 
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
-            service.JoinQueue("SquatRack2", new Member("M002", "Mia"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M002", "M002", "TestPassword123", "Mia"));
             service.NotifyNextInQueue("SquatRack2");
 
             var result = service.ClaimEquipment("SquatRack2", "M002");
@@ -492,7 +491,7 @@ namespace GymQ.Tests
             var sessionService = new SessionService(new InMemoryEquipmentRepository(equipmentStore));
             var service = new QueueService(sessionService);
 
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
 
             var result = service.ClaimEquipment("SquatRack2", "M001");
 
@@ -512,7 +511,7 @@ namespace GymQ.Tests
             var sessionService = new SessionService(new InMemoryEquipmentRepository(equipmentStore));
             var service = new QueueService(sessionService);
 
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
             service.NotifyNextInQueue("SquatRack2");
 
             var entry = GetQueueEntries(service, "SquatRack2")[0];
@@ -542,7 +541,7 @@ namespace GymQ.Tests
         {
             var service = new QueueService();
 
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
             service.NotifyNextInQueue("SquatRack2");
 
             var result = service.ClaimEquipment("SquatRack2", "M001");
@@ -563,7 +562,7 @@ namespace GymQ.Tests
             var sessionService = new SessionService(new InMemoryEquipmentRepository(equipmentStore));
             var service = new QueueService(sessionService);
 
-            service.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
             service.NotifyNextInQueue("SquatRack2");
 
             // Force StartSession to throw by already having an active session on this equipment

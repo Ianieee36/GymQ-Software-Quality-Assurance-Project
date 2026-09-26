@@ -1,5 +1,4 @@
-using GymQ.Application;
-using GymQ.SessionModule;
+using GymQ.Services;
 namespace GymQ.Tests;
 [TestClass]
 public class DemoTimeTests

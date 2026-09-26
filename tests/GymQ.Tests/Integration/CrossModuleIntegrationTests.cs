@@ -1,9 +1,7 @@
 using GymQ.Repository;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using GymQ.Models;
-using GymQ.QueueModule;
-using GymQ.SessionModule;
-using GymQ.FaultModule;
+using GymQ.Services;
 using System;
 using System.Collections.Generic;
 
@@ -24,7 +22,7 @@ namespace GymQ.Tests
             var sessionService = new SessionService(new InMemoryEquipmentRepository(equipmentStore));
             var queueService = new QueueService(sessionService);
 
-            queueService.JoinQueue("SquatRack2", new Member("M001", "Enzo"));
+            queueService.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
             queueService.NotifyNextInQueue("SquatRack2");
 
             var result = queueService.ClaimEquipment("SquatRack2", "M001");
@@ -50,7 +48,7 @@ namespace GymQ.Tests
             sessionService.StartSession("SquatRack2", "M001");
 
             // M002 is waiting behind them
-            queueService.JoinQueue("SquatRack2", new Member("M002", "Mia"));
+            queueService.JoinQueue("SquatRack2", new Member("M002", "M002", "TestPassword123", "Mia"));
 
             queueService.HandleNudgeResponse("SquatRack2", stillUsing: false);
 
@@ -93,8 +91,8 @@ namespace GymQ.Tests
             var faultReportService = new FaultReportService(repository);
             var sessionService = new SessionService(repository);
 
-            var member = new Member("M001", "Enzo");
-            var staff = new Member("S001", "Staff Steph", isStaff: true);
+            var member = new Member("M001", "M001", "TestPassword123", "Enzo");
+            var staff = new Member("S001", "S001", "TestPassword123", "Staff Steph", isStaff: true);
 
             var report = faultReportService.SubmitFaultReport(
                 "SquatRack2", member, "Cable feels loose");

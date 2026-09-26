@@ -6,7 +6,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using GymQ_ENSE707_SQA_Project;
 using GymQ.Desktop.ViewModels;
-using GymQ.Application;
+using GymQ.Services;
 namespace GymQ.Tests;
 public class UiTestApp
 {
@@ -36,13 +36,23 @@ public class EquipmentUiTests
                 b.BringIntoView(); Dispatcher.UIThread.RunJobs(); b.Focus();
                 w.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None); w.KeyReleaseQwerty(PhysicalKey.Enter, RawInputModifiers.None); Dispatcher.UIThread.RunJobs();
             }
-            void SwitchAccount(int index)
+            void SwitchAccount(string memberId)
             {
-                shell.Navigate("profile"); Dispatcher.UIThread.RunJobs();
-                var selector = w.GetVisualDescendants().OfType<ComboBox>().Single();
-                selector.SelectedIndex = index; Dispatcher.UIThread.RunJobs();
-                Assert.AreEqual(shell.Gym.Members[index].MemberId, shell.Current.MemberId);
+                shell.LogOut.Execute(null);
+                Assert.IsInstanceOfType<LoginViewModel>(shell.Page);
+                var login = (LoginViewModel)shell.Page;
+                login.UserName = shell.Gym.FindMember(memberId).UserName;
+                login.Password = memberId switch
+                {
+                    "M001" => "LS123", "M002" => "CC123", "S001" => "GS123",
+                    _ => throw new ArgumentException("No test credentials for this account.")
+                };
+                login.LogIn.Execute(null);
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsTrue(shell.IsLoggedIn);
+                Assert.AreEqual(memberId, shell.Current.MemberId);
             }
+            SwitchAccount("M001");
             Snap("01-equipment");
             var cards = ((EquipmentViewModel)shell.Page).Cards;
             Assert.HasCount(4, cards);
@@ -52,18 +62,18 @@ public class EquipmentUiTests
             Click("End Session"); Assert.IsNull(shell.Gym.Sessions.ReadActiveSession("E1"));
             shell.Navigate("equipment");
             Click("Join Queue"); Assert.IsInstanceOfType<QueueViewModel>(shell.Page); Assert.AreEqual(1, shell.Gym.Queue.GetQueuePosition("E2", "M001"));
-            shell.Gym.Join("E2", shell.Gym.Members[2]); shell.Gym.Join("E2", shell.Gym.Members[3]); Snap("02-queue");
+            shell.Gym.Join("E2", shell.Gym.FindMember("M003")); Snap("02-queue");
             Click("Nudge User"); Assert.HasCount(1, shell.Gym.Nudges.ToList());
-            SwitchAccount(1); Assert.IsInstanceOfType<NudgeOverlay>(shell.Overlay); Snap("03-nudge");
-            Click("END MY SESSION"); SwitchAccount(0); Assert.IsInstanceOfType<ClaimOverlay>(shell.Overlay); Snap("04-your-turn");
+            SwitchAccount("M002"); Assert.IsInstanceOfType<NudgeOverlay>(shell.Overlay); Snap("03-nudge");
+            Click("END MY SESSION"); SwitchAccount("M001"); Assert.IsInstanceOfType<ClaimOverlay>(shell.Overlay); Snap("04-your-turn");
             Click("CLAIM MACHINE"); Assert.IsInstanceOfType<SessionViewModel>(shell.Page); Assert.IsNull(shell.Overlay); Snap("05-session");
             // Reporting must use the explicitly selected machine, even during another active session.
             shell.Navigate("report", "E1"); var report = (ReportViewModel)shell.Page; Snap("06-report");
             var box = w.GetVisualDescendants().OfType<TextBox>().Single(x => x.Name == "ReportDescription"); box.Text = "The belt slips during a run.";
             Click("SUBMIT REPORT"); Assert.IsInstanceOfType<SuccessOverlay>(shell.Overlay); Assert.AreEqual("E1", shell.Gym.Faults.GetPendingReports().Single().EquipmentId); Snap("07-report-submitted");
-            Click("DONE"); SwitchAccount(4); shell.Navigate("staff"); Snap("08-staff");
+            Click("DONE"); SwitchAccount("S001"); shell.Navigate("staff"); Snap("08-staff");
             Click("Confirm fault"); Assert.AreEqual(GymQ.Models.EquipmentStatus.Unavailable, shell.Gym.Equipment["E1"].Status);
-            SwitchAccount(0); shell.Navigate("profile"); Snap("09-profile");
+            SwitchAccount("M001"); shell.Navigate("profile"); Snap("09-profile");
             Click("Advance demo time · 1 minute");
             Click("Advance demo time · 2 minutes");
             Click("Advance demo time · 30 minutes");
