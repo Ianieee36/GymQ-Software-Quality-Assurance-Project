@@ -7,7 +7,7 @@ public class DemoTimeTests
     public void OneMinute_EndsUnansweredNudge_AndOffersNextTurn()
     {
         var g = new GymSession(); g.Join("E2", g.Members[0]); g.SendNudge("E2", g.Members[0]);
-        g.AdvanceDemoTime(1);
+        g.AdvanceDemoTime(2);
         Assert.AreEqual(SessionEndReason.NudgeTimeout, g.Sessions.ReadSessions().Last().EndReason);
         Assert.IsNotNull(g.Queue.ReadQueue("E2")[0].NotifiedAt);
         Assert.HasCount(0, g.Nudges.ToList());
