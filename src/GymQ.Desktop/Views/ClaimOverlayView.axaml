@@ -5,7 +5,9 @@
       <Image Source="{Binding Image}" Height="165"/>
       <TextBlock Text="{Binding Name,StringFormat='{}{0} is ready'}" Classes="h2 center"/>
       <TextBlock Text="You have 2 minutes to claim the equipment before it is offered to the next member." Classes="center" Foreground="#C7C7CD"/>
-      <Button Content="CLAIM MACHINE" Classes="primary" Command="{Binding Claim}" Margin="0,8,0,0"/>
+      <TextBlock Text="Finish your current session before claiming this machine. Your queue position is held until the claim timer expires." Classes="center" Foreground="#C7C7CD" IsVisible="{Binding HasActiveSession}"/>
+      <Button Content="Go to Current Session" Classes="primary" Command="{Binding GoToCurrentSession}" IsVisible="{Binding HasActiveSession}"/>
+      <Button Content="CLAIM MACHINE" Classes="primary" Command="{Binding Claim}" IsEnabled="{Binding !HasActiveSession}" Margin="0,8,0,0"/>
       <Button Content="LEAVE QUEUE" Classes="link" Command="{Binding Leave}"/>
       <TextBlock Text="{Binding Countdown}" Classes="muted center"/>
     </StackPanel>

@@ -159,6 +159,13 @@ public sealed class ShellViewModel : ObservableObject
             if (Overlay is not NudgeOverlay n || n.EquipmentId != nudge.EquipmentId) Overlay = new NudgeOverlay(this, nudge);
             return;
         }
+        // Let members finish their current session without a claim popup blocking the page.
+        // The reserved turn and its original deadline remain in the queue.
+        if (Page is SessionViewModel session && session.IsActive)
+        {
+            if (Overlay is ClaimOverlay or NudgeOverlay) Overlay = null;
+            return;
+        }
         var claim = Gym.Equipment.Values.SelectMany(e => Gym.Queue.ReadQueue(e.EquipmentId))
             .FirstOrDefault(q => q.MemberId == Current.MemberId && q.NotifiedAt.HasValue && Gym.Equipment[q.EquipmentId].Status == EquipmentStatus.Available);
         if (claim != null)

@@ -10,18 +10,27 @@ public sealed class ClaimOverlay : OverlayViewModel
     public string Name { get; }
     public Bitmap Image => EquipmentImages.Get(EquipmentId);
     private readonly GymSession _gym;
+    private readonly string _memberId;
     private readonly DateTime _expiry;
     public string Countdown => "Claim expires in " + PageViewModel.Time(_expiry - _gym.UtcNow);
+    public bool HasActiveSession => _gym.Sessions.ReadSessions().Any(s => s.MemberId == _memberId && s.EndTime == null);
     public ActionCommand Claim { get; }
     public ActionCommand Leave { get; }
+    public ActionCommand GoToCurrentSession { get; }
     public ClaimOverlay(ShellViewModel shell, QueueEntry entry)
     {
         _gym = shell.Gym;
+        _memberId = shell.Current.MemberId;
         EquipmentId = entry.EquipmentId; Name = shell.Gym.Equipment[EquipmentId].Name; _expiry = entry.NotifiedAt!.Value.AddMinutes(2);
         Claim = new(() => shell.Perform(() => shell.Gym.Claim(EquipmentId, shell.Current), () => { shell.Overlay = null; shell.Navigate("session", EquipmentId); }));
         Leave = new(() => shell.Perform(() => shell.Gym.Leave(EquipmentId, shell.Current), () => shell.Overlay = null));
+        GoToCurrentSession = new(() =>
+        {
+            var current = _gym.Sessions.ReadSessions().FirstOrDefault(s => s.MemberId == _memberId && s.EndTime == null);
+            if (current != null) shell.Navigate("session", current.EquipmentId);
+        });
     }
-    public override void Tick() => Notify(nameof(Countdown));
+    public override void Tick() { Notify(nameof(Countdown)); Notify(nameof(HasActiveSession)); }
 }
 public sealed class NudgeOverlay : OverlayViewModel
 {
