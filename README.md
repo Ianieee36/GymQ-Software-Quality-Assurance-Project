@@ -17,6 +17,9 @@ GymQ is a digital queue and equipment managing app built for busy gyms. It gives
 \- View current machine/equipment satus.  
 \- Gym traffic and machine usage analytics.
 
+The agreed prototype nudge policy allows one nudge per equipment every five minutes,
+shared across queued members. See the [GQ-04 policy decision](docs/Studio-Integration.md#nudge-cooldown-policy-gq-04).
+
 ## Development after restructuring
 
 Run these commands from the repository root (the folder containing `GymQ.slnx`).
