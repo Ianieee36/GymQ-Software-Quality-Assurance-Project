@@ -116,6 +116,11 @@ namespace GymQ.Services
             if (queue.Count == 0)
                 return;
 
+            // Core callers can bypass maintenance queue cancellation; never offer an unusable machine.
+            if (_sessionService?.GetAllEquipmentStatus().Any(e =>
+                e.EquipmentId == equipmentId && e.Status == EquipmentStatus.Unavailable) == true)
+                return;
+
             var nextMember = queue[0];
 
             // Once the next member is notified, we record the time of notification.
