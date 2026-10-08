@@ -9,10 +9,15 @@ public sealed class QueueViewModel : PageViewModel
     public string Name => Shell.Gym.Equipment[EquipmentId].Name;
     public Bitmap Image => EquipmentImages.Get(EquipmentId);
     public string Position => Shell.Gym.Queue.GetQueuePosition(EquipmentId, Shell.Current.MemberId) is { } p ? p == 1 ? "You're next" : $"You're #{p} in line" : "You're no longer queued";
-    public string CurrentUser => Shell.Gym.Sessions.ReadActiveSession(EquipmentId) is { } s ? Shell.Gym.MemberName(s.MemberId) : "No active session";
+    public string CurrentUser => Shell.Gym.Sessions.ReadActiveSession(EquipmentId) is { } s 
+        ? Shell.Gym.MemberName(s.MemberId) 
+        : "No active session";
     public string Initial => CurrentUser[..1];
-    public string CurrentDuration => Shell.Gym.Sessions.ReadActiveSession(EquipmentId) is { } s ? Time(Shell.Gym.UtcNow - s.StartTime) : "00:00";
-    public bool CanNudge => Shell.Gym.Queue.GetQueuePosition(EquipmentId, Shell.Current.MemberId) == 1 && Shell.Gym.Sessions.ReadActiveSession(EquipmentId) != null;
+    public string CurrentDuration => Shell.Gym.Sessions.ReadActiveSession(EquipmentId) is { } s 
+        ? Time(Shell.Gym.UtcNow - s.StartTime) 
+        : "00:00";
+    public bool CanNudge => Shell.Gym.Queue.GetQueuePosition(EquipmentId, Shell.Current.MemberId) == 1 
+        && Shell.Gym.Sessions.ReadActiveSession(EquipmentId) != null;
     public ObservableCollection<QueuePerson> People { get; } = new();
     public ActionCommand Nudge { get; }
     public ActionCommand Leave { get; }

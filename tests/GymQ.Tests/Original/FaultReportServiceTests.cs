@@ -61,6 +61,16 @@ namespace GymQ.Tests
         }
 
         [TestMethod]
+        public void SubmitFaultReport_UnknownEquipment_ThrowsArgumentException()
+        {
+            var (service, _) = CreateService();
+            var member = new Member("M001", "M001", "TestPassword123", "Enzo");
+
+            Assert.ThrowsExactly<ArgumentException>(
+                () => service.SubmitFaultReport("E99", member, "Broken"));
+        }
+
+        [TestMethod]
         public void SubmitFaultReport_NullMember_ThrowsArgumentNullException()
         {
             var (service, _) = CreateService();
@@ -172,6 +182,24 @@ namespace GymQ.Tests
             service.ReviewFaultReport(report.ReportId, staff, confirm: false);
 
             Assert.AreEqual(EquipmentStatus.Available, store["SquatRack2"].Status);
+        }
+
+        [TestMethod]
+        public void ReviewFaultReport_EquipmentRemovedBeforeReview_ReportStaysPending()
+        {
+            var (service, store) = CreateService();
+            var member = new Member("M001", "u", "p", "Enzo");
+            var staff = new Member("S001", "s", "p", "Staff", isStaff: true);
+
+            var report = service.SubmitFaultReport("SquatRack2", member, "Loose cable");
+            store.Remove("SquatRack2");   // equipment disappears after the report was filed
+
+            Assert.ThrowsExactly<InvalidOperationException>(
+                () => service.ReviewFaultReport(report.ReportId, staff, confirm: true));
+
+            Assert.AreEqual(FaultReportStatus.Pending, report.Status);
+            Assert.IsNull(report.ReviewedByStaffId);
+            Assert.HasCount(1, service.GetPendingReports());
         }
 
         [TestMethod]

@@ -134,9 +134,15 @@ public sealed class GymSession
         Changed?.Invoke();
     }
     private void RequireCurrentUser(string id, Member member)
-    { if (Sessions.ReadActiveSession(id)?.MemberId != member.MemberId) throw new UnauthorizedAccessException("Only the current equipment user can end this session."); }
+    { 
+        if (Sessions.ReadActiveSession(id, member.MemberId) == null) 
+            throw new UnauthorizedAccessException("Only the current equipment user can end this session."); 
+    }
     private void OfferNext(string equipmentId)
-    { if (Equipment[equipmentId].Status == EquipmentStatus.Available) Queue.NotifyNextInQueue(equipmentId); }
+    { 
+        if (Equipment[equipmentId].Status == EquipmentStatus.Available) 
+            Queue.NotifyNextInQueue(equipmentId); 
+    }
 
     // This method is called by the desktop shell on a timer to process timeouts and expired nudges.
     public void Tick()
@@ -145,7 +151,7 @@ public sealed class GymSession
         bool changed = false;
         foreach (var n in _nudges.Values.Where(n => n.ExpiresAt <= UtcNow).ToArray())
         {
-            if (Sessions.ReadActiveSession(n.EquipmentId)?.MemberId == n.MemberId)
+            if (Sessions.ReadActiveSession(n.EquipmentId, n.MemberId) != null)
             { Sessions.EndSession(n.EquipmentId, SessionEndReason.NudgeTimeout); OfferNext(n.EquipmentId); }
             _nudges.Remove(n.EquipmentId); changed = true;
         }

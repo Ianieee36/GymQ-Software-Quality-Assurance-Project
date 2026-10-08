@@ -31,11 +31,26 @@ public sealed class EquipmentCardViewModel
         Status = e.Status switch { EquipmentStatus.Available => "AVAILABLE", EquipmentStatus.InUse => "IN USE", _ => "OUT OF SERVICE" };
         BadgeColour = new SolidColorBrush(Color.Parse(e.Status switch { EquipmentStatus.Available => "#6DD49D", EquipmentStatus.InUse => "#FFB665", _ => "#B4B5B9" }));
         var position = shell.Gym.Queue.GetQueuePosition(Id, shell.Current.MemberId);
-        bool own = shell.Gym.Sessions.ReadActiveSession(Id)?.MemberId == shell.Current.MemberId;
+        bool own = shell.Gym.Sessions.ReadActiveSession(Id, shell.Current.MemberId) != null;
         var count = shell.Gym.Queue.ReadQueue(Id).Count;
-        CanAct = e.Status != EquipmentStatus.Unavailable;
-        Detail = e.Status == EquipmentStatus.Unavailable ? "Staff review completed" : own ? "Your session is active" : position.HasValue ? $"You're #{position} of {count}" : count > 0 ? $"{count} member{(count == 1 ? "" : "s")} waiting" : e.Status == EquipmentStatus.Available ? "Ready for your next set" : "Currently in a session";
-        ActionLabel = own ? "View Session" : position.HasValue ? "View Queue" : e.Status == EquipmentStatus.Available && count == 0 ? "Start Session" : "Join Queue";
+
+        CanAct = own || e.Status != EquipmentStatus.Unavailable;
+
+        Detail = own 
+            ? (e.Status == EquipmentStatus.Unavailable 
+                ? "Out of service. Please end your session" 
+                : "Your session is active")
+            : e.Status == EquipmentStatus.Unavailable ? "Staff review completed" 
+            : position.HasValue ? $"You're #{position} of {count}" 
+            : count > 0 ? $"{count} member{(count == 1 ? "" : "s")} waiting" 
+            : e.Status == EquipmentStatus.Available ? "Ready for your next set" 
+            : "Currently in a session";
+
+        ActionLabel = own 
+            ? "View Session" : position.HasValue 
+            ? "View Queue" : e.Status == EquipmentStatus.Available && count == 0 
+            ? "Start Session" : "Join Queue";
+
         Open = new(() => shell.Navigate("detail", Id));
         Action = new(() =>
         {

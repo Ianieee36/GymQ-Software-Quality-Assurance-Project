@@ -82,6 +82,12 @@ namespace GymQ.Services
                 throw new ArgumentException("Description cannot be empty");
             }
 
+            // Rejects reports for unknown equipment at submission
+            if(_equipmentRepository.GetById(equipmentId) == null)
+            {
+                throw new ArgumentException($"No equipment found with ID '{equipmentId}'.", nameof(equipmentId));
+            }
+
             // Create new fault report with atomic ID generation
             var report = new FaultReport
             {
@@ -128,14 +134,22 @@ namespace GymQ.Services
                 throw new InvalidOperationException($"Report '{reportId}' has already been reviewed and is not pending. Current report status: '{report.Status}'");
             }
 
+            Equipment? equipment = null;
+            if (confirm)
+            {
+                equipment = _equipmentRepository.GetById(report.EquipmentId)
+                    ?? throw new InvalidOperationException(
+                        $"Report '{reportId}' refers to unknown equipment '{report.EquipmentId}'. It remains pending."
+                    );
+            }
+
             // Update the report status and review details
             report.Status = confirm ? FaultReportStatus.Confirmed : FaultReportStatus.Rejected;
-
             report.ReviewedByStaffId = staff.MemberId;
             report.ReviewedAt = _clock.GetUtcNow().UtcDateTime;
 
-            // FR-007: If the report is confirmed, update the equipment status to Unavailable
-            if (confirm)
+            // FR-007: mark the equipment unavailable
+            if (equipment != null)
             {
                 UpdateEquipmentStatus(report.EquipmentId, EquipmentStatus.Unavailable);
             }
