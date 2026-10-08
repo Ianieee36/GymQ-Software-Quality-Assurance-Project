@@ -41,6 +41,10 @@ public sealed class GymSession
     public List<FaultReport> Reports { get; } = new();
     private readonly Dictionary<string, NudgeNotice> _nudges = new();
     public IReadOnlyCollection<NudgeNotice> Nudges => _nudges.Values;
+    private readonly List<QueueCancellationNotice> _queueCancellations = new();
+    public QueueCancellationNotice? ReadQueueCancellation(string memberId) =>
+        _queueCancellations.FirstOrDefault(n => n.MemberId == memberId);
+    public void AcknowledgeQueueCancellation(QueueCancellationNotice notice) => _queueCancellations.Remove(notice);
     private readonly DemoClock _clock = new();
     public DateTime UtcNow => _clock.GetUtcNow().UtcDateTime;
     public TimeSpan AdvancedBy { get; private set; }
@@ -119,7 +123,16 @@ public sealed class GymSession
         Reports.Add(Faults.SubmitFaultReport(equipmentId, member, description.Trim())); Changed?.Invoke();
     }
     public void Review(string reportId, Member staff, bool confirm)
-    { Faults.ReviewFaultReport(reportId, staff, confirm); Changed?.Invoke(); }
+    {
+        var equipmentId = Faults.GetPendingReports().FirstOrDefault(r => r.ReportId == reportId)?.EquipmentId;
+        Faults.ReviewFaultReport(reportId, staff, confirm);
+        if (confirm && equipmentId != null)
+        {
+            foreach (var memberId in Queue.CancelQueue(equipmentId))
+                _queueCancellations.Add(new(memberId, equipmentId, Equipment[equipmentId].Name));
+        }
+        Changed?.Invoke();
+    }
     private void RequireCurrentUser(string id, Member member)
     { if (Sessions.ReadActiveSession(id)?.MemberId != member.MemberId) throw new UnauthorizedAccessException("Only the current equipment user can end this session."); }
     private void OfferNext(string equipmentId)
@@ -157,3 +170,8 @@ public sealed class GymSession
 
 // data structure for the UI to display nudge notices and their expiration times.
 public record NudgeNotice(string EquipmentId, string MemberId, DateTime ExpiresAt);
+
+public record QueueCancellationNotice(string MemberId, string EquipmentId, string EquipmentName)
+{
+    public string Message => $"The queue for {EquipmentName} has been cancelled because the equipment has been marked Out of Service.";
+}

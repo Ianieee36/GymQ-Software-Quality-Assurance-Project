@@ -12,4 +12,11 @@ public partial class QueueService
         if (!_queues.TryGetValue(equipmentId, out var queue)) return;
         queue.RemoveAll(e => e.MemberId == memberId);
     }
+
+    // Removing the entries also removes their claim deadlines and pending offers.
+    public IReadOnlyList<string> CancelQueue(string equipmentId)
+    {
+        if (!_queues.Remove(equipmentId, out var queue)) return Array.Empty<string>();
+        return queue.Select(e => e.MemberId).ToArray();
+    }
 }

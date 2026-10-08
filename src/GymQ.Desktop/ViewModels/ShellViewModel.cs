@@ -147,6 +147,13 @@ public sealed class ShellViewModel : ObservableObject
     // Claim and nudge pop-ups are member-only: staff never queue or use equipment.
     private void CheckNotices()
     {
+        // A cancellation replaces any stale claim popup and remains pending until acknowledged.
+        if (IsMember && Gym.ReadQueueCancellation(Current.MemberId) is { } cancellation)
+        {
+            if (Overlay is not QueueCancellationOverlay c || c.Notice != cancellation)
+                Overlay = new QueueCancellationOverlay(this, cancellation);
+            return;
+        }
         if (Overlay is SuccessOverlay) return;
         if (!IsMember)
         {
