@@ -6,6 +6,26 @@ SessionService now enforces one active session per member inside its existing lo
 
 GymSession supports start, join, leave, claim, finish, nudge/response, report/review, and timeout processing. It preserves immediate session start on claim and the existing equipment-level nudge cooldown. Maintenance completion is outside this phase’s scope.
 
+## Nudge cooldown policy (GQ-04)
+
+On 8 October 2026, Our team have confirmed that the five-minute nudge cooldown is intentionally shared per equipment. GQ-04 is closed as an accepted business rule. This decision supersedes the per-member/per-equipment cooldown wording in the revised FR-003 in Part 1 (pages 39–40) for the current prototype; the original report remains a historical baseline.
+
+The goal is to protect the current equipment user from repeated nudges by successive queued members. Only the front member may nudge, and all members use the same last-successful-nudge timestamp for that equipment.
+
+- A successful nudge starts the equipment's five-minute cooldown. Another nudge is allowed at or after five minutes from that successful request.
+- Invalid requests and rejected attempts do not start, restart or extend the cooldown.
+- Leaving, rejoining, replacing the front member, session handover and queue cancellation retain the equipment timestamp. These actions cannot bypass the cooldown.
+- Each equipment item has its own independent cooldown. A nudge on one machine does not block another machine.
+- All pages and signed-in accounts share one GymSession and QueueService, so account switching retains the cooldown. Closing the app resets the prototype's in-memory state, including cooldowns.
+
+The response deadline is a separate timer managed by GymSession; it does not control the cooldown. The current desktop footer says "One nudge per machine every 5 minutes", and rejected attempts report the same equipment-wide restriction. The separate GQ-08 issue concerns button eligibility and stale feedback; the service still enforces this policy.
+
+This policy is suitable for the current single-instance desktop prototype: it limits interruptions, preserves FIFO eligibility, and avoids a new front member immediately repeating a recent nudge. The shared cooldown is an intentional trade-off even when that member has not personally nudged before. Restart persistence and coordination across separate app instances remain outside this prototype's guarantees.
+
+`SendNudge_NewFrontMember_SharesEquipmentCooldown` verifies the coordinator workflow, and EquipmentNudgeCooldownTests verifies exact clock boundaries, rejected attempts and queue/session transitions. Existing original queue tests cover independent equipment cooldowns and front-member eligibility.
+
+## Integration setup
+
 Sample equipment and member data are included for development and testing. Use new GymSession(seed: false) to start without seeded sessions or reports; equipment and member data remain available.
 
 MainWindow now creates one ShellViewModel and GymSession shared by all screens. Its one-second UI timer calls Tick and stops when the window closes. The Equipment screen links to details, sessions, queues, and reports; Profile provides demo account selection and staff review access. Coordinator actions run on the UI thread. This layer does not fix concurrent access to the original QueueService.

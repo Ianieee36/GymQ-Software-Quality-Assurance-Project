@@ -23,6 +23,8 @@ namespace GymQ.Services
         // In-memory store for the prototype. One list per equipment, keyed by EquipmentId.
         // TODO: replace with proper storage/repository if the project moves beyond prototype stage.
         private readonly Dictionary<string, List<QueueEntry>> _queues = new();
+        // GQ-04: one shared cooldown per equipment intentionally prevents successive members from nudging repeatedly.
+        // Queue membership and active-session changes do not reset the last accepted nudge time.
         private readonly Dictionary<string, DateTime> _lastNudgeAt = new();
 
         private readonly SessionService? _sessionService;
@@ -134,20 +136,22 @@ namespace GymQ.Services
 
         /// <summary>
         /// FR-003: Called when the next-in-queue member sends a "nudge" to the current user.
-        /// Enforces a cooldown of 1 nudge per equipment item every 5 minutes.
+        /// Agreed GQ-04 policy: at most one accepted nudge per equipment item every 5 minutes,
+        /// shared by all queued members, including a replacement front member.
         /// </summary>
+        /// <remarks>
+        /// Only accepted nudges update the equipment timestamp. Rejected attempts do not extend it.
+        /// Leaving, rejoining, queue cancellation and session handover do not reset it.
+        /// GymSession creates the notice and schedules its separate response deadline.
+        /// </remarks>
         /// <param name="equipmentId">The equipment in question.</param>
         /// <param name="fromMemberId">The member sending the nudge (must be next in queue).</param>
-        /// <returns>True if the nudge was sent; false if blocked by cooldown.</returns>
+        /// <returns>True if accepted; false for invalid queue eligibility or an unexpired equipment cooldown.</returns>
         /// 
         
         public bool SendNudge(string equipmentId, string fromMemberId)
         {
-            // TODO:
-            // 1. Validate fromMemberId is actually next in queue for equipmentId
-            // 2. Check cooldown (track last nudge time per equipmentId)
-            // 3. If allowed, send notification to current user and start 1-minute response timer
-            // 4. Return true/false based on whether the nudge was actually sent
+            // Validate queue eligibility before reading or updating the shared equipment cooldown.
             
              if (string.IsNullOrWhiteSpace(equipmentId) ||
                 string.IsNullOrWhiteSpace(fromMemberId))
@@ -176,14 +180,14 @@ namespace GymQ.Services
 
             _lastNudgeAt[equipmentId] = now;
 
-            // Notification and one-minute scheduling will be added later.
+            // GymSession publishes the notice only after this succeeds.
             return true;
 
         }
 
         /// <summary>
-        /// FR-003: Called when the current user responds to a nudge, or when the
-        /// 1-minute nudge response window times out.
+        /// FR-003: Called when the current user responds to a nudge.
+        /// GymSession handles the separate response timeout.
         /// </summary>
         /// <param name="equipmentId">The equipment in question.</param>
         /// <param name="stillUsing">True if user responded "Still Using"; false if "Finished" or timed out.</param>

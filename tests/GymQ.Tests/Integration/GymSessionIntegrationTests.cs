@@ -25,11 +25,19 @@ public class GymSessionIntegrationTests
         Assert.IsNull(g.Queue.GetQueuePosition("E2", "M001"));
     }
     [TestMethod]
-    public void Cooldown_RemainsPerEquipment_AsInTheOriginalCode()
+    public void SendNudge_NewFrontMember_SharesEquipmentCooldown()
     {
         var g = new GymSession(); g.Join("E2", g.Members[0]); g.Join("E2", g.Members[2]);
         g.SendNudge("E2", g.Members[0]); g.Respond("E2", g.Members[1], true); g.Leave("E2", g.Members[0]);
+        // The replacement front member inherits the machine's cooldown by the agreed GQ-04 policy.
         Assert.ThrowsExactly<InvalidOperationException>(() => g.SendNudge("E2", g.Members[2]));
+        Assert.HasCount(0, g.Nudges);
+        Assert.AreEqual(1, g.Queue.GetQueuePosition("E2", g.Members[2].MemberId));
+        Assert.AreEqual(g.Members[1].MemberId, g.Sessions.ReadActiveSession("E2")!.MemberId);
+        g.AdvanceDemoTime(2); g.AdvanceDemoTime(2); g.AdvanceDemoTime(1);
+        g.SendNudge("E2", g.Members[2]);
+        Assert.HasCount(1, g.Nudges);
+        Assert.AreEqual(g.Members[1].MemberId, g.Nudges.Single().MemberId);
     }
     [TestMethod]
     public void ManualFinish_OffersTheNextTurn_AndLeaveAdvancesIt()
