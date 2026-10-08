@@ -56,3 +56,20 @@ public sealed class SuccessOverlay : OverlayViewModel
     public ActionCommand Done { get; }
     public SuccessOverlay(ShellViewModel shell) => Done = new(() => { shell.Overlay = null; shell.Refresh(); });
 }
+
+public sealed class QueueCancellationOverlay : OverlayViewModel
+{
+    public QueueCancellationNotice Notice { get; }
+    public string Message => Notice.Message;
+    public ActionCommand Done { get; }
+    public QueueCancellationOverlay(ShellViewModel shell, QueueCancellationNotice notice)
+    {
+        Notice = notice;
+        Done = new(() =>
+        {
+            shell.Gym.AcknowledgeQueueCancellation(Notice);
+            shell.Overlay = null;
+            shell.Refresh();
+        });
+    }
+}

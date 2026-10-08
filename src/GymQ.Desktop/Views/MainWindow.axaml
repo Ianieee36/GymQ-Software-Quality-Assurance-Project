@@ -33,6 +33,15 @@
     <DataTemplate DataType="vm:SuccessOverlay">
       <v:SuccessOverlayView/>
     </DataTemplate>
+    <DataTemplate DataType="vm:QueueCancellationOverlay">
+      <Border Classes="card" Padding="24,34">
+        <StackPanel Spacing="24">
+          <TextBlock Text="Queue cancelled" Classes="h1 center"/>
+          <TextBlock Text="{Binding Message}" Classes="center"/>
+          <Button Content="OK" Classes="primary" Command="{Binding Done}"/>
+        </StackPanel>
+      </Border>
+    </DataTemplate>
   </Window.DataTemplates>
   <Grid>
     <Grid RowDefinitions="Auto,*,Auto" IsEnabled="{Binding !HasOverlay}">
