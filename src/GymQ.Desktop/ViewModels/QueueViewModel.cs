@@ -21,7 +21,7 @@ public sealed class QueueViewModel : PageViewModel
     public QueueViewModel(ShellViewModel shell, string id) : base(shell)
     {
         EquipmentId = id;
-        Nudge = new(() => shell.Perform(() => shell.Gym.SendNudge(id, shell.Current), () => Feedback = "Nudge sent. The current user has 60 seconds to respond."));
+        Nudge = new(() => shell.Perform(() => shell.Gym.SendNudge(id, shell.Current), () => Feedback = "Nudge sent. The current user has 120 seconds to respond."));
         Leave = new(() => shell.Perform(() => shell.Gym.Leave(id, shell.Current), () => shell.Navigate("equipment")));
         Refresh();
     }

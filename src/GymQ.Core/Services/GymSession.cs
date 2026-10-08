@@ -105,7 +105,7 @@ public sealed class GymSession
     {
         var current = Sessions.ReadActiveSession(equipmentId) ?? throw new InvalidOperationException("There is no active user to nudge.");
         if (!Queue.SendNudge(equipmentId, member.MemberId)) throw new InvalidOperationException("Only the next member can nudge. Please wait 5 minutes between nudges on this machine.");
-        _nudges[equipmentId] = new(equipmentId, current.MemberId, UtcNow.AddMinutes(1)); Changed?.Invoke();
+        _nudges[equipmentId] = new(equipmentId, current.MemberId, UtcNow.AddMinutes(2)); Changed?.Invoke();
     }
     public void Respond(string equipmentId, Member member, bool stillUsing)
     {
