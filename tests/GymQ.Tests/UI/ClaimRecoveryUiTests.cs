@@ -17,8 +17,7 @@ public class ClaimRecoveryUiTests
     [TestMethod]
     public async Task GoToCurrentSession_PreservesTurnAndDeadline_ThenAllowsClaimAfterManualFinish()
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(UiTestApp));
-        await session.Dispatch(() =>
+        await UiSession.Run(() =>
         {
             var (gym, shell, window) = CreateOfferedClaim();
             try
@@ -80,8 +79,7 @@ public class ClaimRecoveryUiTests
     [TestMethod]
     public async Task RecoveryOnCurrentSession_StillExpiresTurnAtOriginalDeadline_AndAdvancesFifo()
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(UiTestApp));
-        await session.Dispatch(() =>
+        await UiSession.Run(() =>
         {
             var (gym, shell, window) = CreateOfferedClaim();
             try
@@ -111,8 +109,7 @@ public class ClaimRecoveryUiTests
     [TestMethod]
     public async Task RecoveryOnCurrentSession_DoesNotSuppressNudgeNotice()
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(UiTestApp));
-        await session.Dispatch(() =>
+        await UiSession.Run(() =>
         {
             var (gym, shell, window) = CreateOfferedClaim();
             try
