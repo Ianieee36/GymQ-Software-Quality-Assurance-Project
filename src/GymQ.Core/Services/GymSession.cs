@@ -8,7 +8,7 @@ namespace GymQ.Services;
 /// Call actions and Tick on the UI thread; this does not add concurrent queue access support.
 /// The desktop shell must call Tick regularly to process timeouts.
 /// </summary>
-public sealed class GymSession
+public sealed partial class GymSession
 {
     public Dictionary<string, Equipment> Equipment { get; } = new()
     {
@@ -44,28 +44,37 @@ public sealed class GymSession
     private readonly List<QueueCancellationNotice> _queueCancellations = new();
     public QueueCancellationNotice? ReadQueueCancellation(string memberId) =>
         _queueCancellations.FirstOrDefault(n => n.MemberId == memberId);
-    public void AcknowledgeQueueCancellation(QueueCancellationNotice notice) => _queueCancellations.Remove(notice);
-    private readonly DemoClock _clock = new();
+    public void AcknowledgeQueueCancellation(QueueCancellationNotice notice)
+    {
+        if (_queueCancellations.Remove(notice)) Changed?.Invoke();
+    }
+    private readonly DemoClock _clock;
     public DateTime UtcNow => _clock.GetUtcNow().UtcDateTime;
     public TimeSpan AdvancedBy { get; private set; }
     public void AdvanceDemoTime(int minutes)
     {
         if (minutes is not (1 or 2 or 30)) throw new ArgumentOutOfRangeException(nameof(minutes));
-        // Process in seconds so handovers and later deadlines occur in order.
-        for (var second = 0; second < minutes * 60; second++)
+        // Keep timeout processing unchanged, but persist one complete demo-time advance.
+        _suppressAutoSave = true;
+        try
         {
-            _clock.Advance(TimeSpan.FromSeconds(1));
-            Tick();
+            for (var second = 0; second < minutes * 60; second++)
+            {
+                _clock.Advance(TimeSpan.FromSeconds(1));
+                Tick();
+            }
+            AdvancedBy += TimeSpan.FromMinutes(minutes);
         }
-        AdvancedBy += TimeSpan.FromMinutes(minutes);
+        finally { _suppressAutoSave = false; }
         Changed?.Invoke();
     }
     public event Action? Changed;
     public string MemberName(string id) => Members.FirstOrDefault(m => m.MemberId == id)?.Name ?? id;
 
     // The seed parameter allows the desktop shell to start with a pre-populated session and fault report for demonstration purposes.
-    public GymSession(bool seed = true)
+    public GymSession(bool seed = true, TimeProvider? clock = null)
     {
+        _clock = new(clock);
         _users = new UserService(new InMemoryUserRepository(Members));
         var repository = new InMemoryEquipmentRepository(Equipment);
         Sessions = new(repository, _clock);

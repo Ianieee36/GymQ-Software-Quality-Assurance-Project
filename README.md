@@ -20,6 +20,8 @@ GymQ is a digital queue and equipment managing app built for busy gyms. It gives
 The agreed prototype nudge policy allows one nudge per equipment every five minutes,
 shared across queued members. See the [GQ-04 policy decision](docs/Studio-Integration.md#nudge-cooldown-policy-gq-04).
 
+The desktop app saves local gym state between runs by default. See [Local JSON persistence](docs/JSON-Persistence.md) for the data location, recovery behavior, and options for a separate store or an in-memory demo.
+
 ## Development after restructuring
 
 Run these commands from the repository root (the folder containing `GymQ.slnx`).

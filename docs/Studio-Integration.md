@@ -1,6 +1,6 @@
 # Studio UI integration foundation
 
-GymSession coordinates queue, session, and fault-report actions through the existing services. SessionService and FaultReportService receive the same InMemoryEquipmentRepository instance. No database or persistence is added.
+GymSession coordinates queue, session, and fault-report actions through the existing services. SessionService and FaultReportService receive the same InMemoryEquipmentRepository instance. The desktop app now adds [local JSON persistence](JSON-Persistence.md) around this shared state; no external database is introduced.
 
 SessionService now enforces one active session per member inside its existing lock. Both direct starts and queue claims use this check; rejected claims retain their queue entry and original timeout. Other existing service method bodies are preserved. QueueService and SessionService are now partial classes so presentation helpers can live in separate files. Queue helpers provide a copied queue snapshot and a leave action. Session helpers expose active sessions and session history for the UI.
 
@@ -16,11 +16,11 @@ The goal is to protect the current equipment user from repeated nudges by succes
 - Invalid requests and rejected attempts do not start, restart or extend the cooldown.
 - Leaving, rejoining, replacing the front member, session handover and queue cancellation retain the equipment timestamp. These actions cannot bypass the cooldown.
 - Each equipment item has its own independent cooldown. A nudge on one machine does not block another machine.
-- All pages and signed-in accounts share one GymSession and QueueService, so account switching retains the cooldown. Closing the app resets the prototype's in-memory state, including cooldowns.
+- All pages and signed-in accounts share one GymSession and QueueService, so account switching retains the cooldown. The desktop app now persists that state, including cooldowns, across restarts by default. Closing an explicitly disabled-persistence demo still resets its in-memory state; see [local JSON persistence](JSON-Persistence.md).
 
 The response deadline is a separate timer managed by GymSession; it does not control the cooldown. The current desktop footer says "One nudge per machine every 5 minutes", and rejected attempts report the same equipment-wide restriction. The separate GQ-08 issue concerns button eligibility and stale feedback; the service still enforces this policy.
 
-This policy is suitable for the current single-instance desktop prototype: it limits interruptions, preserves FIFO eligibility, and avoids a new front member immediately repeating a recent nudge. The shared cooldown is an intentional trade-off even when that member has not personally nudged before. Restart persistence and coordination across separate app instances remain outside this prototype's guarantees.
+This policy is suitable for the current single-instance desktop prototype: it limits interruptions, preserves FIFO eligibility, and avoids a new front member immediately repeating a recent nudge. The shared cooldown is an intentional trade-off even when that member has not personally nudged before. [Local JSON persistence](JSON-Persistence.md) now retains the cooldown across restarts. Coordination across separate app instances remains outside this prototype's guarantees; one process holds the writer lease for each file.
 
 `SendNudge_NewFrontMember_SharesEquipmentCooldown` verifies the coordinator workflow, and EquipmentNudgeCooldownTests verifies exact clock boundaries, rejected attempts and queue/session transitions. Existing original queue tests cover independent equipment cooldowns and front-member eligibility.
 
@@ -53,4 +53,4 @@ EquipmentUiTests verifies rendered screens, start/end, queue entry, member switc
 
 ## Demo time controls
 
-Profile includes +1, +2, and +30 minute controls. A shared TimeProvider advances sessions, queue deadlines, nudge cooldowns, report timestamps, and UI countdowns without changing the computer clock. Time continues normally between clicks. Advances process one-second steps so earlier handovers and subsequent claim expiries occur in order. All accounts share the offset, and closing the app resets it along with the in-memory data. QueueService and FaultReportService accept an optional clock; existing callers default to system time.
+Profile includes +1, +2, and +30 minute controls. A shared TimeProvider advances sessions, queue deadlines, nudge cooldowns, report timestamps, and UI countdowns without changing the computer clock. Time continues normally between clicks. Advances process one-second steps so earlier handovers and subsequent claim expiries occur in order. All accounts share the offset; the desktop app now saves it with the gym state and restores it on restart. Closing an explicitly disabled-persistence demo still resets the offset and in-memory data. See [local JSON persistence](JSON-Persistence.md) for these modes and offline deadline handling. QueueService and FaultReportService accept an optional clock; existing callers default to system time.

@@ -42,7 +42,7 @@ namespace GymQ.Services
     //
     // Depends on: Models.Equipment (specifically EquipmentStatus enum)
     // Coordinate with: Person A and C on EquipmentStatus enum values — do not rename.
-    public class FaultReportService
+    public partial class FaultReportService
     {
         // Thread-safe in-memory store for the prototype.   ### AI suggested improvement
         private readonly ConcurrentDictionary<string, FaultReport> _reports = new();

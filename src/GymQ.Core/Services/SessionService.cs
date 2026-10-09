@@ -22,7 +22,7 @@ namespace GymQ.Services
     /// Represents one member's usage session on a piece of equipment,
     /// from claiming their turn to the session ending.
     /// </summary>
-    public class UsageSession
+    public partial class UsageSession
     {
         public string SessionId { get; private set; }
         public string EquipmentId { get; private set; }

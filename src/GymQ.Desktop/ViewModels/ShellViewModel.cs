@@ -46,7 +46,12 @@ public sealed class ShellViewModel : ObservableObject
     public bool HasOverlay => Overlay != null;
 
     private string _error = "";
-    public string Error { get => _error; set { if (Set(ref _error, value)) Notify(nameof(HasError)); } }
+    private readonly string _startupPersistenceWarning;
+    public string Error
+    {
+        get => _error.Length > 0 ? _error : Gym.PersistenceError.Length > 0 ? Gym.PersistenceError : _startupPersistenceWarning;
+        set { if (Set(ref _error, value)) Notify(nameof(HasError)); }
+    }
     public bool HasError => Error.Length > 0;
 
     public ActionCommand DismissError { get; }
@@ -61,15 +66,23 @@ public sealed class ShellViewModel : ObservableObject
     private string _tab = "equipment";
     private IBrush Colour(string name) => new SolidColorBrush(Avalonia.Media.Color.Parse(_tab == name ? "#EF234A" : "#98999E"));
 
-    public ShellViewModel(GymSession? gym = null)
+    public ShellViewModel(GymSession? gym = null, string? persistenceWarning = null)
     {
         Gym = gym ?? new();
+        _startupPersistenceWarning = persistenceWarning ?? "";
         Equipment = new(() => Navigate("equipment"));
         Profile = new(() => Navigate("profile"));
         LogOut = new(SignOut);
         DismissError = new(() => Error = "");
         Gym.Changed += Refresh;
+        Gym.PersistenceChanged += PersistenceStatusChanged;
         Navigate("login");
+    }
+
+    private void PersistenceStatusChanged()
+    {
+        Notify(nameof(Error));
+        Notify(nameof(HasError));
     }
 
     // =============================================================
