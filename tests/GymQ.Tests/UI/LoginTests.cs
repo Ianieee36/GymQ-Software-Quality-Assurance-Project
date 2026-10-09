@@ -4,6 +4,8 @@ using GymQ.Services;
 
 namespace GymQ.Tests;
 
+
+[TestCategory("UI")]
 [TestClass]
 [DoNotParallelize]
 public class LoginTests

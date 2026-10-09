@@ -6,6 +6,8 @@ using GymQ.Services;
 
 namespace GymQ.Tests;
 
+
+[TestCategory("UI")]
 [TestClass]
 [DoNotParallelize]
 public sealed class PersistenceUiTests
