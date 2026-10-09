@@ -16,8 +16,7 @@ public class LoginTests
     [DataRow("M003")]
     public async Task DemoLogin_RoutesToCorrectDashboard_AndLogoutRestoresGuard(string memberId)
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(UiTestApp));
-        await session.Dispatch(() =>
+        await UiSession.Run(() =>
         {
             var shell = new ShellViewModel(new GymSession(false));
             var login = (LoginViewModel)shell.Page;
@@ -54,8 +53,7 @@ public class LoginTests
     [DataRow("unknown-user", "LS123")]
     public async Task InvalidCredentials_StayOnLogin_ShowError_AndCanRetry(string username, string password)
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(UiTestApp));
-        await session.Dispatch(() =>
+        await UiSession.Run(() =>
         {
             var shell = new ShellViewModel(new GymSession(false));
             var login = (LoginViewModel)shell.Page;

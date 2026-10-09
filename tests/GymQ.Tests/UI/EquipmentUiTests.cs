@@ -21,8 +21,7 @@ public class EquipmentUiTests
     [TestMethod]
     public async Task EquipmentNavigation_AndMemberStaffCommandsWork()
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(UiTestApp));
-        await session.Dispatch(() =>
+        await UiSession.Run(() =>
         {
             var shell = new ShellViewModel(new GymSession()); var w = new MainWindow(shell); w.Show();
             var output = Environment.GetEnvironmentVariable("GYMQ_SCREENSHOTS") ?? Path.Combine(Path.GetTempPath(), "gymq-equipment-ui-screenshots"); Directory.CreateDirectory(output);

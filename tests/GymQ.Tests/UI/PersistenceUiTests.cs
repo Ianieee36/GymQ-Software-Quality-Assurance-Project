@@ -15,8 +15,7 @@ public sealed class PersistenceUiTests
     [TestMethod]
     public async Task SaveFailure_RemainsVisibleAcrossNavigationAndLogout_UntilSuccessfulSave()
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(UiTestApp));
-        await session.Dispatch(() =>
+        await UiSession.Run(() =>
         {
             var store = new FailingStore();
             var gym = GymSession.OpenPersistent(store, seedWhenMissing: false);
@@ -42,8 +41,7 @@ public sealed class PersistenceUiTests
     [TestMethod]
     public async Task LoadFailureWarning_RemainsVisibleWhenTheMemoryOnlyRunChangesPages()
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(UiTestApp));
-        await session.Dispatch(() =>
+        await UiSession.Run(() =>
         {
             const string warning = "Saved data could not be opened. This run uses memory only.";
             var gym = new GymSession(seed: false);
@@ -61,8 +59,7 @@ public sealed class PersistenceUiTests
     [TestMethod]
     public async Task Restart_EndedSessionPage_PreservesOwnDurationAndHistory_AfterAnotherMemberClaims()
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(UiTestApp));
-        await session.Dispatch(() => WithTemporaryStateFile(path =>
+        await UiSession.Run(() => WithTemporaryStateFile(path =>
         {
             var clock = new FixedClock();
             SessionState[] history;
@@ -110,8 +107,7 @@ public sealed class PersistenceUiTests
     [TestMethod]
     public async Task Restart_PendingCancellationReachesSignedInMember_AndBannerAutoAcknowledgementPersists()
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(UiTestApp));
-        await session.Dispatch(() => WithTemporaryStateFile(path =>
+        await UiSession.Run(() => WithTemporaryStateFile(path =>
         {
             var clock = new FixedClock();
             string message;

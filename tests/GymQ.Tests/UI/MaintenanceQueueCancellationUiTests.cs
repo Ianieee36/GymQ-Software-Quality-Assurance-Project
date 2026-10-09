@@ -22,8 +22,7 @@ public class MaintenanceQueueCancellationUiTests
     [Timeout(60_000, CooperativeCancellation = true)]
     public async Task ConfirmedFault_RemovesPendingClaimPopup_AndShowsCancellationBanner()
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(UiTestApp));
-        await session.Dispatch(() =>
+        await UiSession.Run(() =>
         {
             var gym = new GymSession(false);
             gym.Join("E1", gym.FindMember("M001"));
@@ -70,8 +69,7 @@ public class MaintenanceQueueCancellationUiTests
     [Timeout(60_000, CooperativeCancellation = true)]
     public async Task CancellationDuringNudge_KeepsNudgePopupVisible_AndBannerOnTop()
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(UiTestApp));
-        await session.Dispatch(() =>
+        await UiSession.Run(() =>
         {
             var gym = new GymSession(false);
             gym.Start("E1", gym.FindMember("M001"));
@@ -119,8 +117,7 @@ public class MaintenanceQueueCancellationUiTests
     [Timeout(60_000, CooperativeCancellation = true)]
     public async Task Cancellation_ReachesEachAffectedMember_AfterSignIn_AndPersistsUntilAcknowledged()
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(UiTestApp));
-        await session.Dispatch(() =>
+        await UiSession.Run(() =>
         {
             var gym = new GymSession(false);
             gym.Join("E1", gym.FindMember("M001"));
@@ -164,8 +161,7 @@ public class MaintenanceQueueCancellationUiTests
     [Timeout(60_000, CooperativeCancellation = true)]
     public async Task Cancellation_DuringClaimRecovery_LeavesCurrentSessionActive()
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(UiTestApp));
-        await session.Dispatch(() =>
+        await UiSession.Run(() =>
         {
             var gym = new GymSession(false);
             gym.Start("E1", gym.FindMember("M001"));
@@ -197,8 +193,7 @@ public class MaintenanceQueueCancellationUiTests
     [Timeout(60_000, CooperativeCancellation = true)]
     public async Task SeparateCancelledQueues_EachKeepTheirOwnMessageUntilAcknowledged()
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(UiTestApp));
-        await session.Dispatch(() =>
+        await UiSession.Run(() =>
         {
             var gym = new GymSession(false);
             gym.Join("E1", gym.FindMember("M001"));
@@ -229,8 +224,7 @@ public class MaintenanceQueueCancellationUiTests
     [Timeout(60_000, CooperativeCancellation = true)]
     public async Task Banner_AutoHidesAfterNoticeSeconds_AndIsAcknowledged()
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(UiTestApp));
-        await session.Dispatch(() =>
+        await UiSession.Run(() =>
         {
             var gym = new GymSession(false);
             gym.Join("E1", gym.FindMember("M001"));
