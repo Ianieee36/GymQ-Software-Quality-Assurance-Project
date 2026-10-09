@@ -12,6 +12,8 @@ public class UiTestApp
 {
     public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<App>().UseSkia().WithInterFont().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false });
 }
+
+[TestCategory("UI")]
 [TestClass]
 [DoNotParallelize]
 public class EquipmentUiTests

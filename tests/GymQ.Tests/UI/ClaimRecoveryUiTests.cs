@@ -9,6 +9,7 @@ using GymQ_ENSE707_SQA_Project;
 
 namespace GymQ.Tests;
 
+[TestCategory("UI")]
 [TestClass]
 [DoNotParallelize]
 public class ClaimRecoveryUiTests
