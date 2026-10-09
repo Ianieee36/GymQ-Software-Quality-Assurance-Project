@@ -55,6 +55,31 @@ public sealed class ShellViewModel : ObservableObject
     public bool HasError => Error.Length > 0;
 
     public ActionCommand DismissError { get; }
+
+    // =============================================================
+    // QUEUE CANCELLATION NOTIFICATION (non-blocking)
+    // Shown as a banner over the top of the UI. It never replaces Overlay, so a
+    // nudge or claim popup underneath stays visible and usable. The queue itself
+    // was already cancelled by GymSession.Review when staff confirmed the fault.
+    // =============================================================
+    public const int NoticeSeconds = 10;
+    private int _noticeTicks;
+
+    private QueueCancellationNotice? _notice;
+    public QueueCancellationNotice? Notice
+    {
+        get => _notice;
+        private set
+        {
+            if (!Set(ref _notice, value)) return;
+            _noticeTicks = 0;
+            Notify(nameof(HasNotice)); Notify(nameof(NoticeMessage));
+        }
+    }
+    public bool HasNotice => Notice != null;
+    public string NoticeMessage => Notice?.Message ?? "";
+    public ActionCommand DismissNotice { get; }
+
     public ActionCommand Equipment { get; }
     public ActionCommand Profile { get; }
     public ActionCommand LogOut { get; }
@@ -74,6 +99,7 @@ public sealed class ShellViewModel : ObservableObject
         Profile = new(() => Navigate("profile"));
         LogOut = new(SignOut);
         DismissError = new(() => Error = "");
+        DismissNotice = new(AcknowledgeNotice);
         Gym.Changed += Refresh;
         Gym.PersistenceChanged += PersistenceStatusChanged;
         Navigate("login");
@@ -155,18 +181,31 @@ public sealed class ShellViewModel : ObservableObject
     }
 
     public void Refresh() { Page?.Refresh(); CheckNotices(); }
-    public void Tick() { Gym.Tick(); Page?.Tick(); CheckNotices(); Overlay?.Tick(); }
+    public void Tick() 
+    { 
+        Gym.Tick(); Page?.Tick(); CheckNotices(); Overlay?.Tick();
+        // Auto-hide after NoticeSeconds of real time (the 1-second UI timer).
+        if(HasNotice && ++_noticeTicks >= NoticeSeconds) AcknowledgeNotice(); 
+    }
+
+    private void AcknowledgeNotice()
+    {
+        if(Notice != null) Gym.AcknowledgeQueueCancellation(Notice);
+        Notice = null;
+        UpdateNotice(); // show the next pending cancellation, if any
+    }
+
+    private void UpdateNotice()
+    {
+        Notice = IsMember ? Gym.ReadQueueCancellation(Current.MemberId) : null;
+    }
 
     // Claim and nudge pop-ups are member-only: staff never queue or use equipment.
     private void CheckNotices()
     {
         // A cancellation replaces any stale claim popup and remains pending until acknowledged.
-        if (IsMember && Gym.ReadQueueCancellation(Current.MemberId) is { } cancellation)
-        {
-            if (Overlay is not QueueCancellationOverlay c || c.Notice != cancellation)
-                Overlay = new QueueCancellationOverlay(this, cancellation);
-            return;
-        }
+        UpdateNotice();
+        
         if (Overlay is SuccessOverlay) return;
         if (!IsMember)
         {
