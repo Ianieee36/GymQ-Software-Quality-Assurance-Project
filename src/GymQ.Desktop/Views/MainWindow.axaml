@@ -33,15 +33,6 @@
     <DataTemplate DataType="vm:SuccessOverlay">
       <v:SuccessOverlayView/>
     </DataTemplate>
-    <DataTemplate DataType="vm:QueueCancellationOverlay">
-      <Border Classes="card" Padding="24,34">
-        <StackPanel Spacing="24">
-          <TextBlock Text="Queue cancelled" Classes="h1 center"/>
-          <TextBlock Text="{Binding Message}" Classes="center"/>
-          <Button Content="OK" Classes="primary" Command="{Binding Done}"/>
-        </StackPanel>
-      </Border>
-    </DataTemplate>
   </Window.DataTemplates>
   <Grid>
     <Grid RowDefinitions="Auto,*,Auto" IsEnabled="{Binding !HasOverlay}">
@@ -89,11 +80,24 @@
         <ContentControl Content="{Binding Overlay}" MaxWidth="400" HorizontalAlignment="Stretch"/>
       </ScrollViewer>
     </Border>
-    <Border Background="#482430" CornerRadius="10" Margin="16" Padding="12" VerticalAlignment="Top" IsVisible="{Binding HasError}">
-      <Grid ColumnDefinitions="*,30">
-        <TextBlock Text="{Binding Error}" Foreground="#FFB7C5" FontSize="12"/>
-        <Button Grid.Column="1" Classes="quiet" Content="×" Command="{Binding DismissError}"/>
-      </Grid>
-    </Border>
+        <!-- Top banners. Drawn above the overlay layer but never disable it, so a nudge
+         or claim popup underneath stays usable while a notification is showing. -->
+    <StackPanel VerticalAlignment="Top" Margin="16" Spacing="8">
+      <Border Name="QueueCancelledBanner" Background="#2C2A22" BorderBrush="#F52424" BorderThickness="4,0,0,0" CornerRadius="10" Padding="14,12,8,12" IsVisible="{Binding HasNotice}">
+        <Grid ColumnDefinitions="*,30">
+          <StackPanel Spacing="3">
+            <TextBlock Name="NoticeTitle" Text="Queue cancelled" FontWeight="SemiBold" FontSize="13" Foreground="#FFD27A"/>
+            <TextBlock Name="NoticeText" Text="{Binding NoticeMessage}" Foreground="#E6E1D3" FontSize="12" TextWrapping="Wrap"/>
+          </StackPanel>
+          <Button Grid.Column="1" Name="DismissNoticeButton" Classes="quiet" Content="×" VerticalAlignment="Top" Command="{Binding DismissNotice}" AutomationProperties.Name="Dismiss notification"/>
+        </Grid>
+      </Border>
+      <Border Background="#482430" CornerRadius="10" Padding="12" IsVisible="{Binding HasError}">
+        <Grid ColumnDefinitions="*,30">
+          <TextBlock Text="{Binding Error}" Foreground="#FFB7C5" FontSize="12"/>
+          <Button Grid.Column="1" Classes="quiet" Content="×" Command="{Binding DismissError}"/>
+        </Grid>
+      </Border>
+    </StackPanel>
   </Grid>
 </Window>
