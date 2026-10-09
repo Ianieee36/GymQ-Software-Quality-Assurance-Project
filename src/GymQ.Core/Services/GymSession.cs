@@ -39,8 +39,9 @@ public sealed partial class GymSession
     public SessionService Sessions { get; }
     public FaultReportService Faults { get; }
     public List<FaultReport> Reports { get; } = new();
-    private readonly Dictionary<string, NudgeNotice> _nudges = new();
-    public IReadOnlyCollection<NudgeNotice> Nudges => _nudges.Values;
+    public NudgeService Nudging { get; }
+    /// <summary>Open nudges. Kept for the desktop UI and existing tests.</summary>
+    public IReadOnlyCollection<NudgeNotice> Nudges => Nudging.Open;
     private readonly List<QueueCancellationNotice> _queueCancellations = new();
     public QueueCancellationNotice? ReadQueueCancellation(string memberId) =>
         _queueCancellations.FirstOrDefault(n => n.MemberId == memberId);
@@ -80,6 +81,7 @@ public sealed partial class GymSession
         Sessions = new(repository, _clock);
         Queue = new(Sessions, _clock);
         Faults = new(repository, _clock);
+        Nudging = new(Sessions, Queue, _clock);
         if (seed)
         {
             Sessions.StartSession("E2", "M002");
@@ -101,36 +103,47 @@ public sealed partial class GymSession
         Queue.JoinQueue(equipmentId, member);
         OfferNext(equipmentId); Changed?.Invoke();
     }
+
     public void Leave(string equipmentId, Member member)
-    { Queue.LeaveQueue(equipmentId, member.MemberId); OfferNext(equipmentId); Changed?.Invoke(); }
+    {
+        Queue.LeaveQueue(equipmentId, member.MemberId);
+        Nudging.WithdrawInvalid();   // a nudge this member sent is withdrawn with them
+        OfferNext(equipmentId); Changed?.Invoke();
+    }
+
     public void Claim(string equipmentId, Member member)
     {
         if (!Queue.ClaimEquipment(equipmentId, member.MemberId)) throw new InvalidOperationException("This turn has expired or is not yours.");
+        Nudging.WithdrawInvalid();
         Changed?.Invoke();
     }
+
     public void Finish(string equipmentId, Member member)
     {
         RequireCurrentUser(equipmentId, member);
         Sessions.EndSession(equipmentId, SessionEndReason.ManualFinish);
-        _nudges.Remove(equipmentId); OfferNext(equipmentId); Changed?.Invoke();
+        Nudging.WithdrawInvalid();   // the session has ended, so its nudge has too
+        OfferNext(equipmentId); Changed?.Invoke();
     }
+
     public void SendNudge(string equipmentId, Member member)
     {
-        var current = Sessions.ReadActiveSession(equipmentId) ?? throw new InvalidOperationException("There is no active user to nudge.");
-        if (!Queue.SendNudge(equipmentId, member.MemberId)) throw new InvalidOperationException("Only the next member can nudge. Please wait 5 minutes between nudges on this machine.");
-        _nudges[equipmentId] = new(equipmentId, current.MemberId, UtcNow.AddMinutes(2)); Changed?.Invoke();
+        Nudging.Request(equipmentId, member.MemberId);
+        Changed?.Invoke();
     }
+
     public void Respond(string equipmentId, Member member, bool stillUsing)
     {
         RequireCurrentUser(equipmentId, member);
-        if (!_nudges.ContainsKey(equipmentId)) throw new InvalidOperationException("This nudge has already ended.");
-        Queue.HandleNudgeResponse(equipmentId, stillUsing);
-        _nudges.Remove(equipmentId); Changed?.Invoke();
+        Nudging.Respond(equipmentId, member.MemberId, stillUsing);
+        Changed?.Invoke();
     }
+
     public void Report(string equipmentId, Member member, string description)
     {
         Reports.Add(Faults.SubmitFaultReport(equipmentId, member, description.Trim())); Changed?.Invoke();
     }
+
     public void Review(string reportId, Member staff, bool confirm)
     {
         var equipmentId = Faults.GetPendingReports().FirstOrDefault(r => r.ReportId == reportId)?.EquipmentId;
@@ -139,14 +152,18 @@ public sealed partial class GymSession
         {
             foreach (var memberId in Queue.CancelQueue(equipmentId))
                 _queueCancellations.Add(new(memberId, equipmentId, Equipment[equipmentId].Name));
+            
+            Nudging.WithdrawInvalid(); // nobody is waiting any more, so the nudge is withdrawn
         }
         Changed?.Invoke();
     }
+
     private void RequireCurrentUser(string id, Member member)
     { 
         if (Sessions.ReadActiveSession(id, member.MemberId) == null) 
             throw new UnauthorizedAccessException("Only the current equipment user can end this session."); 
     }
+
     private void OfferNext(string equipmentId)
     { 
         if (Equipment[equipmentId].Status == EquipmentStatus.Available) 
@@ -156,13 +173,14 @@ public sealed partial class GymSession
     // This method is called by the desktop shell on a timer to process timeouts and expired nudges.
     public void Tick()
     {
-        // Check for expired nudges and end sessions if the user did not respond in time.
-        bool changed = false;
-        foreach (var n in _nudges.Values.Where(n => n.ExpiresAt <= UtcNow).ToArray())
+        // Withdraw first, so a nudge whose requester left can never end a session.
+        bool changed = Nudging.WithdrawInvalid();
+        foreach (var n in Nudging.TakeExpired())
         {
-            if (Sessions.ReadActiveSession(n.EquipmentId, n.MemberId) != null)
-            { Sessions.EndSession(n.EquipmentId, SessionEndReason.NudgeTimeout); OfferNext(n.EquipmentId); }
-            _nudges.Remove(n.EquipmentId); changed = true;
+            // Every remaining nudge belongs to the machine's active session (checked above).
+            Sessions.EndSession(n.EquipmentId, SessionEndReason.NudgeTimeout);
+            OfferNext(n.EquipmentId); 
+            changed = true;
         }
 
         // Check for expired sessions and queue claims.
@@ -171,20 +189,22 @@ public sealed partial class GymSession
             var wasActive = Sessions.ReadActiveSession(e.EquipmentId) != null;
             Sessions.EnforceMaxSessionDuration(e.EquipmentId);
             if (wasActive && Sessions.ReadActiveSession(e.EquipmentId) == null)
-            { _nudges.Remove(e.EquipmentId); OfferNext(e.EquipmentId); changed = true; }
+            { 
+                OfferNext(e.EquipmentId); 
+                changed = true; 
+            }
+
             foreach (var entry in Queue.ReadQueue(e.EquipmentId).Where(q => q.NotifiedAt.HasValue))
             {
                 Queue.EnforceClaimTimeout(e.EquipmentId, entry.MemberId);
                 if (Queue.GetQueuePosition(e.EquipmentId, entry.MemberId) == null) changed = true;
             }
         }
+        if (Nudging.WithdrawInvalid()) changed = true;   // sessions ended by the time cap
         if (changed) Changed?.Invoke();
     }
 
 }
-
-// data structure for the UI to display nudge notices and their expiration times.
-public record NudgeNotice(string EquipmentId, string MemberId, DateTime ExpiresAt);
 
 public record QueueCancellationNotice(string MemberId, string EquipmentId, string EquipmentName)
 {

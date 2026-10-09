@@ -115,14 +115,19 @@ public class MaintenanceNotificationGuardTests
         Assert.HasCount(0, gym.Queue.ReadQueue("E1"));
         Assert.AreSame(cancelledNotices[0], gym.ReadQueueCancellation("M002"));
         Assert.AreSame(cancelledNotices[1], gym.ReadQueueCancellation("M003"));
-        if (path == "leave") Assert.IsNotNull(gym.Sessions.ReadActiveSession("E1"));
+        // The nudger lost their place when the queue was cancelled, so the nudge was withdrawn
+        // and cannot time the session out.
+        if (path is "leave" or "nudge timeout")
+        {
+            Assert.IsNotNull(gym.Sessions.ReadActiveSession("E1"));
+            Assert.HasCount(0, gym.Nudges);
+        }
         else
         {
             Assert.IsNull(gym.Sessions.ReadActiveSession("E1"));
             var expectedReason = path switch
             {
                 "manual" => SessionEndReason.ManualFinish,
-                "nudge timeout" => SessionEndReason.NudgeTimeout,
                 _ => SessionEndReason.MaxDurationReached
             };
             Assert.AreEqual(expectedReason, gym.Sessions.ReadSessions().Single().EndReason);

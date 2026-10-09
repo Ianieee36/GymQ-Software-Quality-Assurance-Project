@@ -18,7 +18,7 @@ public static class GymStateValidator
         if (state.NextReportNumber < 0 || state.NextReportNumber == long.MaxValue)
             throw Invalid("The next report counter is invalid or exhausted.");
         if (state.Equipment == null || state.Sessions == null || state.Reports == null || state.Queue == null ||
-            state.LastNudgeAt == null || state.Nudges == null || state.Cancellations == null)
+            state.NudgeCooldowns == null || state.Nudges == null || state.Cancellations == null)
             throw Invalid("Snapshot collections must not be null.");
 
         var members = validMemberIds?.ToHashSet(StringComparer.Ordinal);
@@ -130,22 +130,40 @@ public static class GymStateValidator
             }
         }
 
-        foreach (var (id, time) in state.LastNudgeAt)
+        var cooldownPairs = new HashSet<(string, string)>();
+        foreach (var cooldown in state.NudgeCooldowns)
         {
-            EquipmentById(id);
-            Utc(time, "Last nudge time");
+            if (cooldown == null) throw Invalid("Nudge cooldowns must not contain null entries.");
+            Id(cooldown.SessionId, "Cooldown session ID");
+            if (!sessionIds.Contains(cooldown.SessionId)) throw Invalid($"Cooldown for unknown session '{cooldown.SessionId}'.");
+            MemberId(cooldown.RequestedBy);
+            Utc(cooldown.LastNudgeAt, "Last nudge time");
+            if (!cooldownPairs.Add((cooldown.SessionId, cooldown.RequestedBy)))
+                throw Invalid("Only one cooldown per session and nudger is allowed.");
         }
-        var nudgedEquipment = new HashSet<string>(StringComparer.Ordinal);
+
+        var nudgedSessions = new HashSet<string>(StringComparer.Ordinal);
         foreach (var nudge in state.Nudges)
         {
             if (nudge == null) throw Invalid("Nudges must not contain null entries.");
+            Id(nudge.SessionId, "Nudge session ID");
             EquipmentById(nudge.EquipmentId);
             MemberId(nudge.MemberId);
+            MemberId(nudge.RequestedBy);
             Utc(nudge.ExpiresAt, "Nudge expiration");
-            if (!nudgedEquipment.Add(nudge.EquipmentId)) throw Invalid("Only one pending nudge per equipment is allowed.");
-            if (!activeEquipment.TryGetValue(nudge.EquipmentId, out var session) || session.MemberId != nudge.MemberId)
-                throw Invalid("A pending nudge must belong to the active equipment user.");
-            if (nudge.ExpiresAt < session.StartTime) throw Invalid("A nudge cannot expire before its session starts.");
+            if (!nudgedSessions.Add(nudge.EquipmentId)) 
+                throw Invalid("Only one pending nudge per equipment is allowed.");
+            // A nudge belongs to one active session; equipment and target must agree with it.
+            if (!activeEquipment.TryGetValue(nudge.EquipmentId, out var session) || 
+                session.SessionId != nudge.SessionId || session.MemberId != nudge.MemberId)
+                throw Invalid("A pending nudge must belong to the active session on its equipment.");
+            
+            if (nudge.RequestedBy == nudge.MemberId) 
+                throw Invalid("A member cannot nudge their own session.");
+            if (nudge.ExpiresAt < session.StartTime) 
+                throw Invalid("A nudge cannot expire before its session starts.");
+            // Whether the requester is still queued is not checked here: restore withdraws such
+            // nudges instead of rejecting the whole file.
         }
         foreach (var notice in state.Cancellations)
         {

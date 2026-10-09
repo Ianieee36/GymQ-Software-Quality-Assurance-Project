@@ -12,6 +12,20 @@ public sealed class JsonGymStateStoreTests
     private static readonly DateTime Now = new(2026, 10, 9, 12, 0, 0, DateTimeKind.Utc);
 
     [TestMethod]
+    public void SchemaVersion1File_FromBeforeSessionOwnedNudges_IsRejectedAndPreserved()
+    {
+        using var directory = new TemporaryDirectory();
+        using var store = new JsonGymStateStore(directory.StatePath);
+        const string version1 = "{\"schemaVersion\":1}";
+        File.WriteAllText(directory.StatePath, version1);
+
+        var ex = Assert.ThrowsExactly<InvalidDataException>(() => store.Load());
+
+        Assert.Contains("schema version '1'", ex.Message);
+        Assert.AreEqual(version1, File.ReadAllText(directory.StatePath));
+    }
+
+    [TestMethod]
     public void SaveAndLoad_PreservesHistoryOrderedQueuesTimersAndMaintenanceState()
     {
         using var directory = new TemporaryDirectory();
@@ -37,8 +51,8 @@ public sealed class JsonGymStateStoreTests
         CollectionAssert.AreEqual(new[] { "M2", "M3" }, actual.Queue.Where(q => q.EquipmentId == "E3").Select(q => q.MemberId).ToArray());
         Assert.AreEqual(Now.AddMinutes(-1), actual.Queue.Single(q => q.EquipmentId == "E3" && q.MemberId == "M2").NotifiedAt);
         Assert.IsNull(actual.Queue.Single(q => q.EquipmentId == "E3" && q.MemberId == "M3").NotifiedAt);
-        Assert.AreEqual(Now.AddMinutes(-1), actual.LastNudgeAt["E1"]);
-        Assert.AreEqual(new NudgeNotice("E1", "M1", Now.AddMinutes(1)), actual.Nudges.Single());
+                  Assert.AreEqual(new NudgeCooldown("S1", "M3", Now.AddMinutes(-1)), actual.NudgeCooldowns.Single());
+        Assert.AreEqual(new NudgeNotice(SessionId: "S1", EquipmentId: "E1", MemberId: "M1", RequestedBy: "M3", ExpiresAt: Now.AddMinutes(1)), actual.Nudges.Single());
         Assert.AreEqual(new QueueCancellationNotice("M3", "E2", "Bike"), actual.Cancellations.Single());
     }
 
@@ -64,7 +78,7 @@ public sealed class JsonGymStateStoreTests
         using var store = new JsonGymStateStore(directory.StatePath);
         store.Save(EmptyState(Now));
         store.Save(EmptyState(Now.AddMinutes(1)));
-        const string corrupted = "{\"schemaVersion\":1,";
+        const string corrupted = "{\"schemaVersion\":2,";
         File.WriteAllText(directory.StatePath, corrupted);
 
         Assert.AreEqual(Now, store.Load()!.SavedAtUtc);
@@ -113,8 +127,8 @@ public sealed class JsonGymStateStoreTests
     [TestMethod]
     [DataRow("null")]
     [DataRow("{}")]
-    [DataRow("{\"schemaVersion\":\"1\"}")]
-    [DataRow("{\"schemaVersion\":1,\"savedAtUtc\":\"2026-10-09T12:00:00Z\",\"equipment\":null}")]
+    [DataRow("{\"schemaVersion\":\"2\"}")]
+    [DataRow("{\"schemaVersion\":2,\"savedAtUtc\":\"2026-10-09T12:00:00Z\",\"equipment\":null}")]
     public void InvalidPrimaryWithoutBackup_IsPreservedAndCannotBeOverwritten(string invalid)
     {
         using var directory = new TemporaryDirectory();
@@ -135,7 +149,7 @@ public sealed class JsonGymStateStoreTests
     [DataRow("sessions")]
     [DataRow("reports")]
     [DataRow("queue")]
-    [DataRow("lastNudgeAt")]
+    [DataRow("nudgeCooldowns")]
     [DataRow("nudges")]
     [DataRow("cancellations")]
     public void MissingRootField_IsRejectedAndCannotReplaceTheIncompleteFile(string field)
@@ -294,7 +308,7 @@ public sealed class JsonGymStateStoreTests
 
     private static IEnumerable<GymStateSnapshot> InvalidStates()
     {
-        yield return new() { SavedAtUtc = Now, SchemaVersion = 2 };
+        yield return new() { SavedAtUtc = Now, SchemaVersion = GymStateSnapshot.CurrentSchemaVersion + 1 };
         yield return new() { SavedAtUtc = DateTime.SpecifyKind(Now, DateTimeKind.Unspecified) };
         yield return new() { SavedAtUtc = Now, ClockOffset = TimeSpan.FromMinutes(1) };
         yield return new() { SavedAtUtc = Now, NextReportNumber = long.MaxValue };
@@ -304,15 +318,18 @@ public sealed class JsonGymStateStoreTests
         yield return new() { SavedAtUtc = Now, Equipment = new[] { new Equipment("E1", "Bike"), new Equipment("E1", "Duplicate") } };
         yield return new() { SavedAtUtc = Now, Equipment = new[] { new Equipment("E1", "Bike") { Status = EquipmentStatus.InUse } } };
         yield return new() { SavedAtUtc = Now, Equipment = new[] { new Equipment("E1", "Bike") }, Sessions = new[] { new SessionState("S1", "E1", "M1", Now, null, null) } };
-        yield return new() { SavedAtUtc = Now, LastNudgeAt = new() { ["unknown"] = Now } };
+        yield return new() { SavedAtUtc = Now, NudgeCooldowns = new[] { new NudgeCooldown("unknown", "M1", Now) } };
         yield return new() { SavedAtUtc = Now, Cancellations = new[] { new QueueCancellationNotice("M1", "unknown", "Bike") } };
-        yield return new() { SavedAtUtc = Now, Equipment = new[] { new Equipment("E1", "Bike") }, Nudges = new[] { new NudgeNotice("E1", "M1", Now) } };
+        yield return new() { SavedAtUtc = Now, Equipment = new[] { new Equipment("E1", "Bike") }, Nudges = new[] { new NudgeNotice("S1", "E1", "M1", "M2", Now) } };
         yield return new() { SavedAtUtc = Now, Equipment = new[] { new Equipment("E1", "Bike") { Status = EquipmentStatus.Unavailable } }, Queue = new[] { new QueueEntry("E1", "M1") { JoinedAt = Now } } };
         yield return new() { SavedAtUtc = Now, Equipment = new[] { new Equipment("E1", "Bike") }, Queue = new[] { new QueueEntry("E1", "M1") { JoinedAt = Now }, new QueueEntry("E1", "M2") { JoinedAt = Now, NotifiedAt = Now } } };
         yield return new() { SavedAtUtc = Now, Equipment = new[] { new Equipment("E1", "Bike") }, Reports = new[] { new FaultReport { ReportId = "R-1", EquipmentId = "E1", SubmittedByMemberId = "M1", Description = "Broken", SubmittedAt = Now } } };
         yield return new() { SavedAtUtc = Now, Equipment = new[] { new Equipment("E1", "Bike") { Status = EquipmentStatus.InUse } }, Sessions = new[] { new SessionState("S1", "E1", "M1", DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc), null, null) } };
         yield return new() { SavedAtUtc = Now, Equipment = new[] { new Equipment("E1", "Bike") }, Queue = new[] { new QueueEntry("E1", "M1") { JoinedAt = Now, NotifiedAt = DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc) } } };
         yield return new() { SavedAtUtc = Now, Equipment = new[] { new Equipment("E1", "Bike") { Status = EquipmentStatus.InUse } }, Sessions = new[] { new SessionState("S1", "E1", "M1", Now, null, null) }, Queue = new[] { new QueueEntry("E1", "M2") { JoinedAt = Now, NotifiedAt = Now } } };
+        // Session-owned nudges: the nudge must match the active session, and nobody nudges themselves.
+        yield return new() { SavedAtUtc = Now, Equipment = new[] { new Equipment("E1", "Bike") { Status = EquipmentStatus.InUse } }, Sessions = new[] { new SessionState("S1", "E1", "M1", Now, null, null) }, Nudges = new[] { new NudgeNotice("S-old", "E1", "M1", "M2", Now) } };
+        yield return new() { SavedAtUtc = Now, Equipment = new[] { new Equipment("E1", "Bike") { Status = EquipmentStatus.InUse } }, Sessions = new[] { new SessionState("S1", "E1", "M1", Now, null, null) }, Nudges = new[] { new NudgeNotice("S1", "E1", "M1", "M1", Now) } };
     }
 
     private static GymStateSnapshot EmptyState(DateTime? savedAt = null) => new() { SavedAtUtc = savedAt ?? Now };
@@ -342,8 +359,11 @@ public sealed class JsonGymStateStoreTests
             new QueueEntry("E3", "M2") { JoinedAt = Now.AddMinutes(-2), NotifiedAt = Now.AddMinutes(-1) },
             new QueueEntry("E3", "M3") { JoinedAt = Now.AddMinutes(-1) }
         },
-        LastNudgeAt = new() { ["E1"] = Now.AddMinutes(-1) },
-        Nudges = new[] { new NudgeNotice("E1", "M1", Now.AddMinutes(1)) },
+
+        // M3 last nudged session S1 a minute ago (the pending nudge below).
+        NudgeCooldowns = new[] { new NudgeCooldown("S1", "M3", Now.AddMinutes(-1)) },
+        // M3 (front of the E1 queue) nudged M1, who owns active session S1 on E1.
+        Nudges = new[] { new NudgeNotice(SessionId: "S1", EquipmentId: "E1", MemberId: "M1", RequestedBy: "M3", ExpiresAt: Now.AddMinutes(1)) },
         Cancellations = new[] { new QueueCancellationNotice("M3", "E2", "Bike") }
     };
 

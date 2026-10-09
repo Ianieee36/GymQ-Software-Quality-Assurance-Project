@@ -86,7 +86,7 @@ public sealed class GymPersistenceTests
     }
 
     [TestMethod]
-    public void Restart_PreservesPendingNudgeAndEquipmentCooldown_AcrossFrontMemberChange()
+    public void Restart_PreservesPendingNudgeAndNudgerCooldown_AcrossFrontMemberChange()
     {
         using var fixture = new PersistentFixture();
         var gym = fixture.Open();
@@ -101,14 +101,38 @@ public sealed class GymPersistenceTests
         var restored = fixture.Open();
 
         Assert.AreEqual(pending, restored.Nudges.Single());
+        Assert.AreEqual(restored.Sessions.ReadActiveSession("E1")!.SessionId, restored.Nudges.Single().SessionId);
+        Assert.AreEqual("M002", restored.Nudges.Single().RequestedBy);
         restored.Respond("E1", restored.FindMember("M001"), true);
-        restored.Leave("E1", restored.FindMember("M002"));
-        Assert.ThrowsExactly<InvalidOperationException>(() => restored.SendNudge("E1", restored.FindMember("M003")));
+        // M002's own cooldown on this session survived the restart.
+        Assert.ThrowsExactly<InvalidOperationException>(() => restored.SendNudge("E1", restored.FindMember("M002")));
         fixture.Clock.Advance(TimeSpan.FromMinutes(4) - TimeSpan.FromTicks(1));
-        Assert.ThrowsExactly<InvalidOperationException>(() => restored.SendNudge("E1", restored.FindMember("M003")));
-        fixture.Clock.Advance(TimeSpan.FromTicks(1));
+        Assert.ThrowsExactly<InvalidOperationException>(() => restored.SendNudge("E1", restored.FindMember("M002")));
+        // The replacement front member is not blocked by M002's cooldown.
+        restored.Leave("E1", restored.FindMember("M002"));
         restored.SendNudge("E1", restored.FindMember("M003"));
+        Assert.AreEqual("M003", restored.Nudges.Single().RequestedBy);
         Assert.AreEqual(restored.UtcNow.AddMinutes(2), restored.Nudges.Single().ExpiresAt);
+    }
+
+    [TestMethod]
+    public void Restart_NudgerNoLongerQueued_NudgeWithdrawn_SessionSurvivesDeadline()
+    {
+        using var fixture = new PersistentFixture();
+        var gym = fixture.Open();
+        gym.Start("E1", gym.FindMember("M001"));
+        gym.Join("E1", gym.FindMember("M002"));
+        gym.SendNudge("E1", gym.FindMember("M002"));
+        gym.Queue.LeaveQueue("E1", "M002");   // bypasses GymSession, so the saved nudge is stale
+        Assert.IsTrue(gym.SaveState());
+        fixture.Close();
+        fixture.Clock.Advance(TimeSpan.FromMinutes(5));
+
+        var restored = fixture.Open();
+
+        // Restore applies the same rule as Tick: no requester, no nudge, no NudgeTimeout.
+        Assert.HasCount(0, restored.Nudges);
+        Assert.AreEqual("M001", restored.Sessions.ReadActiveSession("E1")!.MemberId);
     }
 
     [TestMethod]

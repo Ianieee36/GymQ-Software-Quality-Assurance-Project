@@ -23,9 +23,6 @@ namespace GymQ.Services
         // In-memory store for the prototype. One list per equipment, keyed by EquipmentId.
         // TODO: replace with proper storage/repository if the project moves beyond prototype stage.
         private readonly Dictionary<string, List<QueueEntry>> _queues = new();
-        // GQ-04: one shared cooldown per equipment intentionally prevents successive members from nudging repeatedly.
-        // Queue membership and active-session changes do not reset the last accepted nudge time.
-        private readonly Dictionary<string, DateTime> _lastNudgeAt = new();
 
         private readonly SessionService? _sessionService;
 
@@ -149,11 +146,18 @@ namespace GymQ.Services
         /// <returns>True if accepted; false for invalid queue eligibility or an unexpired equipment cooldown.</returns>
         /// 
         
+        /// <summary>
+        /// FR-003: Queue eligibility for a nudge: only the member at the front of the queue may nudge.
+        /// </summary>
+        /// <remarks>
+        /// The 5-minute cooldown is not a queue rule. NudgeService owns it, per session and nudger.
+        /// </remarks>
+        /// <param name="equipmentId">The equipment in question.</param>
+        /// <param name="fromMemberId">The member sending the nudge (must be next in queue).</param>
+        /// <returns>True if the member is at the front of the queue for this equipment.</returns>
         public bool SendNudge(string equipmentId, string fromMemberId)
         {
-            // Validate queue eligibility before reading or updating the shared equipment cooldown.
-            
-             if (string.IsNullOrWhiteSpace(equipmentId) ||
+            if (string.IsNullOrWhiteSpace(equipmentId) ||
                 string.IsNullOrWhiteSpace(fromMemberId))
             {
                 return false;
@@ -165,24 +169,7 @@ namespace GymQ.Services
                 return false;
             }
 
-            if (queue[0].MemberId != fromMemberId)
-            {
-                return false;
-            }
-
-            var now = _clock.GetUtcNow().UtcDateTime;
-
-            if (_lastNudgeAt.TryGetValue(equipmentId, out var lastNudgeAt) &&
-                now - lastNudgeAt < TimeSpan.FromMinutes(5))
-            {
-                return false;
-            }
-
-            _lastNudgeAt[equipmentId] = now;
-
-            // GymSession publishes the notice only after this succeeds.
-            return true;
-
+            return queue[0].MemberId == fromMemberId;
         }
 
         /// <summary>

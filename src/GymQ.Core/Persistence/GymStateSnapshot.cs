@@ -7,7 +7,7 @@ namespace GymQ.Persistence;
 /// <summary>Data needed to resume one local gym instance, independent of its UI.</summary>
 public sealed class GymStateSnapshot
 {
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 3;
 
     [JsonRequired]
     public int SchemaVersion { get; init; } = CurrentSchemaVersion;
@@ -28,7 +28,7 @@ public sealed class GymStateSnapshot
     [JsonRequired]
     public QueueEntry[] Queue { get; init; } = Array.Empty<QueueEntry>();
     [JsonRequired]
-    public Dictionary<string, DateTime> LastNudgeAt { get; init; } = new();
+    public NudgeCooldown[] NudgeCooldowns { get; init; } = Array.Empty<NudgeCooldown>();
     [JsonRequired]
     public NudgeNotice[] Nudges { get; init; } = Array.Empty<NudgeNotice>();
     [JsonRequired]

@@ -110,7 +110,8 @@ public sealed class JsonGymStateStore : IGymStateStore, IDisposable
     {
         if (typeInfo.Type != typeof(Equipment) && typeInfo.Type != typeof(SessionState) &&
             typeInfo.Type != typeof(FaultReport) && typeInfo.Type != typeof(QueueEntry) &&
-            typeInfo.Type != typeof(NudgeNotice) && typeInfo.Type != typeof(QueueCancellationNotice))
+            typeInfo.Type != typeof(NudgeNotice) && typeInfo.Type != typeof(NudgeCooldown) &&
+            typeInfo.Type != typeof(QueueCancellationNotice))
             return;
         // Null is meaningful for inactive timers and sessions; omission must not silently invent it.
         foreach (var property in typeInfo.Properties.Where(p => p.Get != null && p.Set != null))

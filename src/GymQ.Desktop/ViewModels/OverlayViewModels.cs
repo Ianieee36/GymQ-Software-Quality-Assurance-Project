@@ -36,6 +36,7 @@ public sealed class NudgeOverlay : OverlayViewModel
 {
     public string EquipmentId { get; }
     public string Name { get; }
+    public string SessionId { get; }
     public Bitmap Image => EquipmentImages.Get(EquipmentId);
     private readonly GymSession _gym;
     private readonly DateTime _expiry;
@@ -46,6 +47,7 @@ public sealed class NudgeOverlay : OverlayViewModel
     {
         _gym = shell.Gym;
         EquipmentId = notice.EquipmentId; Name = shell.Gym.Equipment[EquipmentId].Name; _expiry = notice.ExpiresAt;
+        SessionId = notice.SessionId;
         StillUsing = new(() => shell.Perform(() => shell.Gym.Respond(EquipmentId, shell.Current, true), () => shell.Overlay = null));
         Finish = new(() => shell.Perform(() => shell.Gym.Respond(EquipmentId, shell.Current, false), () => { shell.Overlay = null; shell.Navigate("equipment"); }));
     }

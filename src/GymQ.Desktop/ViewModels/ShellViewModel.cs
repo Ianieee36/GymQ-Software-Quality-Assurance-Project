@@ -215,7 +215,7 @@ public sealed class ShellViewModel : ObservableObject
         var nudge = Gym.Nudges.FirstOrDefault(n => n.MemberId == Current.MemberId);
         if (nudge != null)
         {
-            if (Overlay is not NudgeOverlay n || n.EquipmentId != nudge.EquipmentId) Overlay = new NudgeOverlay(this, nudge);
+            if (Overlay is not NudgeOverlay n || n.SessionId != nudge.SessionId) Overlay = new NudgeOverlay(this, nudge);
             return;
         }
         // Let members finish their current session without a claim popup blocking the page.

@@ -1,4 +1,8 @@
-<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="GymQ.Desktop.Views.QueueView">
+<UserControl xmlns="https://github.com/avaloniaui" 
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GymQ.Desktop.ViewModels" 
+             x:Class="GymQ.Desktop.Views.QueueView"
+             x:DataType="vm:QueueViewModel">
   <StackPanel Margin="22,12,22,24" Spacing="15">
     <Grid ColumnDefinitions="40,*,40">
       <Button Content="‹" Classes="quiet" Command="{Binding Back}"/>
@@ -31,7 +35,7 @@
         </ItemsPanelTemplate>
       </ItemsControl.ItemsPanel>
       <ItemsControl.ItemTemplate>
-        <DataTemplate>
+        <DataTemplate x:DataType="vm:QueuePerson">
           <Border Background="{Binding Background}" Padding="12,9" CornerRadius="10">
             <Grid ColumnDefinitions="24,*">
               <TextBlock Text="{Binding Number,StringFormat='{}{0}.'}" FontWeight="SemiBold"/>
@@ -47,6 +51,6 @@
     <Button Content="Nudge User" Classes="outline" Command="{Binding Nudge}" IsEnabled="{Binding CanNudge}" HorizontalAlignment="Right"/>
     <TextBlock Text="{Binding Feedback}" Foreground="#77D4A2" FontSize="12"/>
     <Button Content="Leave Queue" Classes="link" Command="{Binding Leave}"/>
-    <TextBlock Text="One nudge per machine every 5 minutes." Classes="muted center" FontSize="10"/>
+        <TextBlock Text="{Binding NudgeHint}" Classes="muted center" FontSize="10"/>
   </StackPanel>
 </UserControl>

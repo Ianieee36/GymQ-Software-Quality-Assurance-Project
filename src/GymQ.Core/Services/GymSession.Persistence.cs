@@ -39,7 +39,7 @@ public sealed partial class GymSession
     /// <summary>A detached snapshot of business state, without accounts or UI state.</summary>
     public GymStateSnapshot CaptureState() => new()
     {
-        SchemaVersion = 1,
+        SchemaVersion = GymStateSnapshot.CurrentSchemaVersion,
         SavedAtUtc = UtcNow,
         ClockOffset = _clock.Offset,
         AdvancedBy = AdvancedBy,
@@ -48,8 +48,8 @@ public sealed partial class GymSession
         Reports = Faults.ExportState(),
         NextReportNumber = Faults.NextReportNumber,
         Queue = Queue.ExportQueueState(),
-        LastNudgeAt = Queue.ExportCooldownState(),
-        Nudges = _nudges.Values.ToArray(),
+        NudgeCooldowns = Nudging.ExportCooldowns(),
+        Nudges = Nudging.ExportState(),
         Cancellations = _queueCancellations.ToArray()
     };
 
@@ -95,8 +95,8 @@ public sealed partial class GymSession
         Faults.RestoreState(state.Reports, state.NextReportNumber);
         Reports.Clear();
         Reports.AddRange(Faults.ReadAllReports());
-        Queue.RestoreState(state.Queue, state.LastNudgeAt);
-        foreach (var n in state.Nudges) _nudges.Add(n.EquipmentId, n);
+        Queue.RestoreState(state.Queue);
+        foreach (var n in state.Nudges) Nudging.RestoreState(state.Nudges, state.NudgeCooldowns);
         _queueCancellations.AddRange(state.Cancellations);
     }
 
@@ -105,18 +105,19 @@ public sealed partial class GymSession
     private void ReconcileRestoredDeadlines()
     {
         var now = UtcNow;
+        // Same rule as Tick: a nudge whose requester left can never time a session out.
+        Nudging.WithdrawInvalid();
         foreach (var session in Sessions.ReadSessions().Where(s => s.EndTime == null))
         {
             var deadline = session.StartTime.AddMinutes(30);
             var reason = SessionEndReason.MaxDurationReached;
-            if (_nudges.TryGetValue(session.EquipmentId, out var nudge) && nudge.ExpiresAt <= deadline)
+            if (Nudging.ReadFor(session.SessionId) is { } nudge && nudge.ExpiresAt <= deadline)
             {
                 deadline = nudge.ExpiresAt;
                 reason = SessionEndReason.NudgeTimeout;
             }
             if (deadline > now) continue;
             Sessions.EndRestoredSession(session.EquipmentId, deadline, reason);
-            _nudges.Remove(session.EquipmentId);
         }
         foreach (var e in Equipment.Values.Where(e => e.Status == EquipmentStatus.Available))
         {
@@ -125,5 +126,6 @@ public sealed partial class GymSession
                 Queue.LeaveQueue(e.EquipmentId, front.MemberId);
             OfferNext(e.EquipmentId);
         }
+        Nudging.WithdrawInvalid(); // nudges of sessions that ended while the app was closed
     }
 }

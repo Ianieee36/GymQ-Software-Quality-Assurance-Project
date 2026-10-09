@@ -65,8 +65,8 @@ public class MaintenanceQueueCancellationTests
         Assert.AreEqual(EquipmentStatus.Available, gym.Equipment["E2"].Status);
     }
 
-    [TestMethod]
-    public void ConfirmedFault_PreservesActiveSessionAndExistingNudgeResponse_WithoutOfferingCancelledTurn()
+        [TestMethod]
+    public void ConfirmedFault_WithdrawsPendingNudge_AndPreservesActiveSession()
     {
         var gym = new GymSession(false);
         var activeMember = gym.FindMember("M002");
@@ -75,23 +75,27 @@ public class MaintenanceQueueCancellationTests
         gym.Join("E1", gym.FindMember("M003"));
         gym.SendNudge("E1", gym.FindMember("M001"));
         var activeSession = gym.Sessions.ReadActiveSession("E1");
-        var pendingNudge = gym.Nudges.Single();
+        Assert.HasCount(1, gym.Nudges);
 
         ConfirmFault(gym, "E1");
 
+        // The nudger lost their place, so nobody is waiting and the nudge is withdrawn.
+        Assert.HasCount(0, gym.Nudges);
         Assert.AreSame(activeSession, gym.Sessions.ReadActiveSession("E1"));
         Assert.IsNull(activeSession!.EndTime);
-        Assert.AreEqual(pendingNudge, gym.Nudges.Single());
         Assert.HasCount(0, gym.Queue.ReadQueue("E1"));
         Assert.IsNotNull(gym.ReadQueueCancellation("M001"));
         Assert.IsNotNull(gym.ReadQueueCancellation("M003"));
         Assert.IsNull(gym.ReadQueueCancellation(activeMember.MemberId));
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(() => gym.Respond("E1", activeMember, stillUsing: false));
+        Assert.StartsWith("This nudge has already ended", ex.Message);
 
-        gym.Respond("E1", activeMember, stillUsing: false);
+        // The old deadline passes without ending the session.
+        gym.AdvanceDemoTime(2);
+        Assert.AreSame(activeSession, gym.Sessions.ReadActiveSession("E1"));
 
-        Assert.IsNull(gym.Sessions.ReadActiveSession("E1"));
-        Assert.AreEqual(SessionEndReason.NudgeResponse, activeSession.EndReason);
-        Assert.HasCount(0, gym.Nudges);
+        gym.Finish("E1", activeMember);
+        Assert.AreEqual(SessionEndReason.ManualFinish, activeSession.EndReason);
         Assert.AreEqual(EquipmentStatus.Unavailable, gym.Equipment["E1"].Status);
         Assert.HasCount(0, gym.Queue.ReadQueue("E1"));
         Assert.IsFalse(gym.Queue.ClaimEquipment("E1", "M001"));

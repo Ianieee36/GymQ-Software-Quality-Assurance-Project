@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using GymQ.Desktop.Presentation;
+using GymQ.Services;
 namespace GymQ.Desktop.ViewModels;
 public sealed class QueueViewModel : PageViewModel
 {
@@ -16,8 +17,22 @@ public sealed class QueueViewModel : PageViewModel
     public string CurrentDuration => Shell.Gym.Sessions.ReadActiveSession(EquipmentId) is { } s 
         ? Time(Shell.Gym.UtcNow - s.StartTime) 
         : "00:00";
-    public bool CanNudge => Shell.Gym.Queue.GetQueuePosition(EquipmentId, Shell.Current.MemberId) == 1 
-        && Shell.Gym.Sessions.ReadActiveSession(EquipmentId) != null;
+    public bool CanNudge =>
+        Shell.Gym.Queue.GetQueuePosition(EquipmentId, Shell.Current.MemberId) == 1 &&
+        Shell.Gym.Sessions.ReadActiveSession(EquipmentId) is { } s &&
+        s.MemberId != Shell.Current.MemberId &&
+        Shell.Gym.Nudging.ReadFor(s.SessionId) == null &&
+        CooldownRemaining == TimeSpan.Zero;
+    
+    // This member's cooldown on the current session only; other members' nudges never count.
+    private TimeSpan CooldownRemaining =>
+        Shell.Gym.Sessions.ReadActiveSession(EquipmentId) is { } s
+            ? Shell.Gym.Nudging.CooldownRemaining(s.SessionId, Shell.Current.MemberId)
+            : TimeSpan.Zero;
+    
+    public string NudgeHint => CooldownRemaining is { } wait && wait > TimeSpan.Zero
+        ? $"You can nudge this member again in {Time(wait)}."
+        : $"You can nudge the current user once every {(int)NudgeService.CooldownWindow.TotalMinutes} minutes.";
     public ObservableCollection<QueuePerson> People { get; } = new();
     public ActionCommand Nudge { get; }
     public ActionCommand Leave { get; }
@@ -26,7 +41,8 @@ public sealed class QueueViewModel : PageViewModel
     public QueueViewModel(ShellViewModel shell, string id) : base(shell)
     {
         EquipmentId = id;
-        Nudge = new(() => shell.Perform(() => shell.Gym.SendNudge(id, shell.Current), () => Feedback = "Nudge sent. The current user has 120 seconds to respond."));
+                Nudge = new(() => shell.Perform(() => shell.Gym.SendNudge(id, shell.Current),
+            () => Feedback = $"Nudge sent. The current user has {(int)NudgeService.ResponseWindow.TotalSeconds} seconds to respond."));
         Leave = new(() => shell.Perform(() => shell.Gym.Leave(id, shell.Current), () => shell.Navigate("equipment")));
         Refresh();
     }
@@ -36,7 +52,7 @@ public sealed class QueueViewModel : PageViewModel
         foreach (var entry in Shell.Gym.Queue.ReadQueue(EquipmentId)) People.Add(new(++i, entry.MemberId == Shell.Current.MemberId ? "You" : Shell.Gym.MemberName(entry.MemberId), entry.MemberId == Shell.Current.MemberId));
         Notify(nameof(Position)); Notify(nameof(CurrentUser)); Notify(nameof(Initial)); Notify(nameof(CanNudge)); Tick();
     }
-    public override void Tick() => Notify(nameof(CurrentDuration));
+        public override void Tick() { Notify(nameof(CurrentDuration)); Notify(nameof(CanNudge)); Notify(nameof(NudgeHint)); }
 }
 public record QueuePerson(int Number, string Name, bool IsMe)
 {

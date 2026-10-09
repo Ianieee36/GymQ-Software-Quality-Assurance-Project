@@ -250,8 +250,10 @@ namespace GymQ.Tests
         }
 
         [TestMethod]
-        public void SendNudge_CooldownHasNotExpired_ReturnsFalse()
+        public void SendNudge_RepeatedByFrontMember_StaysEligible()
         {
+            // QueueService only checks queue eligibility. The 5-minute cooldown is per session
+            // and nudger, and is enforced by NudgeService (see NudgeCooldownTests).
             var service = new QueueService();
 
             service.JoinQueue("SquatRack2", new Member("M001", "M001", "TestPassword123", "Enzo"));
@@ -260,7 +262,7 @@ namespace GymQ.Tests
 
             var result = service.SendNudge("SquatRack2", "M001");
 
-            Assert.IsFalse(result);
+            Assert.IsTrue(result);
         }
 
         [TestMethod]

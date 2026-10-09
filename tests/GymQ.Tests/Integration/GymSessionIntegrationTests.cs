@@ -24,21 +24,20 @@ public class GymSessionIntegrationTests
         Assert.AreEqual("M001", g.Sessions.ReadActiveSession("E2")!.MemberId);
         Assert.IsNull(g.Queue.GetQueuePosition("E2", "M001"));
     }
+
     [TestMethod]
-    public void SendNudge_NewFrontMember_SharesEquipmentCooldown()
+    public void SendNudge_NewFrontMember_HasItsOwnCooldown()
     {
         var g = new GymSession(); g.Join("E2", g.Members[0]); g.Join("E2", g.Members[2]);
         g.SendNudge("E2", g.Members[0]); g.Respond("E2", g.Members[1], true); g.Leave("E2", g.Members[0]);
-        // The replacement front member inherits the machine's cooldown by the agreed GQ-04 policy.
-        Assert.ThrowsExactly<InvalidOperationException>(() => g.SendNudge("E2", g.Members[2]));
-        Assert.HasCount(0, g.Nudges);
+        // The cooldown belongs to the previous nudger, so the replacement front member can nudge now.
         Assert.AreEqual(1, g.Queue.GetQueuePosition("E2", g.Members[2].MemberId));
-        Assert.AreEqual(g.Members[1].MemberId, g.Sessions.ReadActiveSession("E2")!.MemberId);
-        g.AdvanceDemoTime(2); g.AdvanceDemoTime(2); g.AdvanceDemoTime(1);
         g.SendNudge("E2", g.Members[2]);
         Assert.HasCount(1, g.Nudges);
         Assert.AreEqual(g.Members[1].MemberId, g.Nudges.Single().MemberId);
+        Assert.AreEqual(g.Members[2].MemberId, g.Nudges.Single().RequestedBy);
     }
+    
     [TestMethod]
     public void ManualFinish_OffersTheNextTurn_AndLeaveAdvancesIt()
     {
@@ -60,10 +59,7 @@ public class GymSessionIntegrationTests
     public void NudgeScheduler_InvokesExistingSessionTimeoutReason()
     {
         var g = new GymSession(); g.Join("E2", g.Members[0]); g.SendNudge("E2", g.Members[0]);
-        var field = typeof(GymSession).GetField("_nudges", BindingFlags.NonPublic | BindingFlags.Instance)!;
-        var nudges = (Dictionary<string,NudgeNotice>)field.GetValue(g)!;
-        nudges["E2"] = nudges["E2"] with { ExpiresAt = DateTime.UtcNow.AddSeconds(-1) };
-        g.Tick();
+        g.AdvanceDemoTime(2);
         Assert.AreEqual(SessionEndReason.NudgeTimeout, g.Sessions.ReadSessions().Last().EndReason);
         Assert.IsNotNull(g.Queue.ReadQueue("E2")[0].NotifiedAt);
     }
