@@ -12,16 +12,14 @@ public sealed class JsonGymStateStoreTests
     private static readonly DateTime Now = new(2026, 10, 9, 12, 0, 0, DateTimeKind.Utc);
 
     [TestMethod]
-    public void SchemaVersion1File_FromBeforeSessionOwnedNudges_IsRejectedAndPreserved()
+    public void IncompleteVersion1File_IsRejectedAndPreserved()
     {
         using var directory = new TemporaryDirectory();
         using var store = new JsonGymStateStore(directory.StatePath);
         const string version1 = "{\"schemaVersion\":1}";
         File.WriteAllText(directory.StatePath, version1);
 
-        var ex = Assert.ThrowsExactly<InvalidDataException>(() => store.Load());
-
-        Assert.Contains("schema version '1'", ex.Message);
+        Assert.ThrowsExactly<InvalidDataException>(() => store.Load());
         Assert.AreEqual(version1, File.ReadAllText(directory.StatePath));
     }
 

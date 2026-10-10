@@ -22,10 +22,11 @@ The first persistent run uses the normal sample state when neither a primary fil
 
 ## Saved state and responsibilities
 
-The versioned snapshot contains equipment and its status; complete session history with original IDs, start/end times and reasons; all fault reports with review details and the report-number counter; queue entries in FIFO order with their joined and claim-notification timestamps; pending nudges and their deadlines; equipment nudge-cooldown timestamps; and unacknowledged queue-cancellation notices. `ClockOffset` and `AdvancedBy` retain the shared demo-time advance across persistent restarts. The computer clock is unchanged.
+The versioned snapshot contains equipment and its status; complete session history with original IDs, start/end times and reasons; all fault reports with review details and the report-number counter; queue entries in FIFO order with their joined and claim-notification timestamps; pending nudges and their deadlines; nudge-cooldown timestamps keyed by session and requesting member; and unacknowledged queue-cancellation notices. `ClockOffset` and `AdvancedBy` retain the shared demo-time advance across persistent restarts. The computer clock is unchanged.
 
 - `GymStateSnapshot` and `SessionState` define the saved data. `GymStateValidator` checks the schema, identities, references, timestamps, ownership and queue/session invariants before restoration or saving. Every saved field must be present, including nullable fields whose value is `null`; incomplete files are rejected rather than silently resetting part of the state.
 - `IGymStateStore` separates storage from the coordinator. `JsonGymStateStore` reads and writes JSON, manages the backup, and holds the exclusive writer lease.
+- `LegacyGymStateMigration` validates the original version 1 format and converts it to the current version 3 snapshot before restoration. The store preserves the original bytes before saving the upgrade.
 - Service persistence partials export detached copies and restore authoritative service data without generating new IDs, restarting timers, or notifying queues during hydration. Restored report objects are shared with GymSession's report list so subsequent staff review stays consistent.
 - `GymSession.OpenPersistent` loads, validates, restores and reconciles deadlines before screens use the state, then subscribes saving to business changes. Ordinary `new GymSession(...)` construction remains in memory, so existing service/UI tests do not open the user's file.
 - `App` chooses the path and owns the store until shutdown. The shell uses the existing error banner to show persistence problems.
@@ -37,6 +38,16 @@ Business transitions and actual timeout changes trigger saves; countdown-only UI
 Restoration uses real elapsed time plus the retained demo offset. For each active session, the earliest applicable nudge deadline or 30-minute limit ends the session if it has passed. The recorded end time is that original deadline, not the restart time, and the corresponding end reason is retained. Out of Service equipment remains unavailable.
 
 An unexpired offered claim keeps its original notification time and remaining window. If an already offered claim expired while the app was closed, that member is removed. The next waiting member receives a fresh claim window at startup; members who were never offered a turn while offline are not silently expired in sequence. FIFO order otherwise remains unchanged. A waiting queue is offered a turn only when its equipment is available.
+
+Current version 3 nudge cooldowns are restored even when there is no pending popup, including after a Still Using response or after the requesting member leaves the queue. Reopening does not restart or bypass the original five-minute cooldown. Pending version 3 nudges retain their original two-minute response deadline.
+
+## Upgrading original version 1 saves
+
+A complete, valid version 1 save is accepted automatically. Equipment, session history, fault reports and their numbering, FIFO queue entries and original claim timestamps, cancellation notices, and the demo clock offset are preserved. The normal deadline reconciliation above still applies to time spent offline. Loading alone does not rewrite any data; the first successful startup save writes version 3.
+
+Version 1 nudge records contain only equipment, target member and expiration; its cooldown ledger contains only equipment and timestamp. Neither records the requesting member or session ID required by the current policy. Queue membership may have changed since the request. The upgrade therefore retires these legacy pending nudges and equipment cooldowns without inventing an owner or ending a session because of an old nudge. This exception applies only to migration from version 1; complete version 3 nudge records and cooldowns are restored normally. Malformed legacy nudge records still cause validation failure before migration.
+
+Before replacing a version 1 source, the store archives its exact original bytes as `gym-state.json.v1.<id>.bak` (or the configured filename with that suffix). This archive also covers a version 1 backup used to recover a missing or corrupt primary. It remains intact when the normal `.bak` file rotates on later saves. An archive failure prevents replacement of the original source. Only the known released version 1 and current version 3 formats are accepted; version 2 and unknown future formats remain preserved and unsupported.
 
 ## File protection and failure behavior
 
