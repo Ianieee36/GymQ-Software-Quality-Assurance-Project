@@ -24,6 +24,8 @@ public sealed class JsonGymStateStore : IGymStateStore, IDisposable
     private readonly object _sync = new();
     private bool _disposed;
     private bool _recoveredFromBackup;
+    private SnapshotFile? _legacySource;
+    private string? _legacyArchivePath;
 
     public JsonGymStateStore(string filePath)
     {
@@ -41,9 +43,11 @@ public sealed class JsonGymStateStore : IGymStateStore, IDisposable
         {
             ThrowIfDisposed();
             _recoveredFromBackup = false;
+            _legacySource = null;
+            _legacyArchivePath = null;
             if (!File.Exists(_filePath))
                 return File.Exists(_backupPath) ? RecoverBackup() : null;
-            try { return ReadValidatedFile(_filePath).State; }
+            try { return RememberLegacySource(ReadValidatedFile(_filePath)); }
             catch (UnsupportedSchemaException ex) { throw new InvalidDataException(ex.Message, ex); }
             catch (InvalidDataException ex)
             {
@@ -81,19 +85,35 @@ public sealed class JsonGymStateStore : IGymStateStore, IDisposable
                 ReadBackup();
             }
 
+            var legacy = previous?.SourceVersion == 1 ? previous : _legacySource;
+            if (legacy != null && _legacyArchivePath == null)
+            {
+                // The rotating backup will soon contain version 3. Keep the exact version 1
+                // source separately, including when it came from a recovered backup.
+                var archive = _filePath + $".v1.{Guid.NewGuid():N}.bak";
+                WriteAtomically(archive, legacy.Data);
+                _legacyArchivePath = archive;
+            }
             if (previous != null) WriteAtomically(_backupPath, previous.Data);
             if (corruptPrimary)
                 File.Copy(_filePath, _filePath + $".corrupt.{Guid.NewGuid():N}");
             WriteAtomically(_filePath, data);
             _recoveredFromBackup = false;
+            _legacySource = null;
         }
     }
 
     private GymStateSnapshot RecoverBackup()
     {
-        var state = ReadBackup().State;
+        var state = RememberLegacySource(ReadBackup());
         _recoveredFromBackup = true;
         return state;
+    }
+
+    private GymStateSnapshot RememberLegacySource(SnapshotFile file)
+    {
+        if (file.SourceVersion == 1) _legacySource = file;
+        return file.State;
     }
 
     private SnapshotFile ReadBackup()
@@ -128,12 +148,14 @@ public sealed class JsonGymStateStore : IGymStateStore, IDisposable
                 !document.RootElement.TryGetProperty("schemaVersion", out var schema) ||
                 schema.ValueKind != JsonValueKind.Number || !schema.TryGetInt32(out var version))
                 throw new InvalidDataException("The gym state file requires an integer schemaVersion.");
-            if (version != GymStateSnapshot.CurrentSchemaVersion)
+            if (version != 1 && version != GymStateSnapshot.CurrentSchemaVersion)
                 throw new UnsupportedSchemaException(version);
-            var state = JsonSerializer.Deserialize<GymStateSnapshot>(data, JsonOptions)
+            var state = version == 1
+                ? LegacyGymStateMigration.UpgradeVersion1(data, JsonOptions)
+                : JsonSerializer.Deserialize<GymStateSnapshot>(data, JsonOptions)
                 ?? throw new InvalidDataException("The gym state file is empty.");
             GymStateValidator.Validate(state);
-            return new(state, data);
+            return new(state, data, version);
         }
         catch (JsonException ex) { throw new InvalidDataException("The gym state JSON is invalid.", ex); }
     }
@@ -171,7 +193,7 @@ public sealed class JsonGymStateStore : IGymStateStore, IDisposable
         }
     }
 
-    private sealed record SnapshotFile(GymStateSnapshot State, byte[] Data);
+    private sealed record SnapshotFile(GymStateSnapshot State, byte[] Data, int SourceVersion);
     private sealed class UnsupportedSchemaException(int version)
         : Exception($"Unsupported gym state schema version '{version}'. The file was preserved.") { }
 }

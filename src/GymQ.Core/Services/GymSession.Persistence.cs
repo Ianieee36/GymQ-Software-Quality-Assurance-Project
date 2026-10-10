@@ -96,7 +96,8 @@ public sealed partial class GymSession
         Reports.Clear();
         Reports.AddRange(Faults.ReadAllReports());
         Queue.RestoreState(state.Queue);
-        foreach (var n in state.Nudges) Nudging.RestoreState(state.Nudges, state.NudgeCooldowns);
+        // Cooldowns remain after a response even when no popup is pending.
+        Nudging.RestoreState(state.Nudges, state.NudgeCooldowns);
         _queueCancellations.AddRange(state.Cancellations);
     }
 
