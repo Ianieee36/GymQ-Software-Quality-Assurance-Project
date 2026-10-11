@@ -206,7 +206,7 @@ public sealed class ShellViewModel : ObservableObject
         // A cancellation replaces any stale claim popup and remains pending until acknowledged.
         UpdateNotice();
         
-        if (Overlay is SuccessOverlay) return;
+        // Timed member notices replace report confirmations; otherwise keep them until DONE.
         if (!IsMember)
         {
             if (Overlay is ClaimOverlay or NudgeOverlay) Overlay = null;
