@@ -132,21 +132,6 @@ namespace GymQ.Services
         }
 
         /// <summary>
-        /// FR-003: Called when the next-in-queue member sends a "nudge" to the current user.
-        /// Agreed GQ-04 policy: at most one accepted nudge per equipment item every 5 minutes,
-        /// shared by all queued members, including a replacement front member.
-        /// </summary>
-        /// <remarks>
-        /// Only accepted nudges update the equipment timestamp. Rejected attempts do not extend it.
-        /// Leaving, rejoining, queue cancellation and session handover do not reset it.
-        /// GymSession creates the notice and schedules its separate response deadline.
-        /// </remarks>
-        /// <param name="equipmentId">The equipment in question.</param>
-        /// <param name="fromMemberId">The member sending the nudge (must be next in queue).</param>
-        /// <returns>True if accepted; false for invalid queue eligibility or an unexpired equipment cooldown.</returns>
-        /// 
-        
-        /// <summary>
         /// FR-003: Queue eligibility for a nudge: only the member at the front of the queue may nudge.
         /// </summary>
         /// <remarks>

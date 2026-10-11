@@ -17,6 +17,6 @@
     <Button Content="Advance demo time · 30 minutes" Command="{Binding AdvanceThirty}" Classes="outline"/>
     <TextBlock Text="{Binding DemoTime}" Classes="muted"/>
     <TextBlock Text="ABOUT THIS VERSION" Classes="micro"/>
-    <TextBlock Text="To try another account, log out and sign in again. Data resets when you close the app." Classes="muted" FontSize="12"/>
+    <TextBlock Text="To try another account, log out and sign in again. Gym state is saved locally by default." Classes="muted" FontSize="12"/>
   </StackPanel>
 </UserControl>
