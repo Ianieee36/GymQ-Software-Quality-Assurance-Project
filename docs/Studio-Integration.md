@@ -4,31 +4,35 @@ GymSession coordinates queue, session, and fault-report actions through the exis
 
 SessionService now enforces one active session per member inside its existing lock. Both direct starts and queue claims use this check; rejected claims retain their queue entry and original timeout. Other existing service method bodies are preserved. QueueService and SessionService are now partial classes so presentation helpers can live in separate files. Queue helpers provide a copied queue snapshot and a leave action. Session helpers expose active sessions and session history for the UI.
 
-GymSession supports start, join, leave, claim, finish, nudge/response, report/review, and timeout processing. It preserves immediate session start on claim and the existing equipment-level nudge cooldown. Maintenance completion is outside this phase’s scope.
+GymSession supports start, join, leave, claim, finish, nudge/response, report/review, and timeout processing. Claims start a session immediately. NudgeService manages the agreed per-session/requester cooldown. Maintenance completion is outside this phase’s scope.
 
 ## Nudge cooldown policy (GQ-04)
 
-On 8 October 2026, Our team have confirmed that the five-minute nudge cooldown is intentionally shared per equipment. GQ-04 is closed as an accepted business rule. This decision supersedes the per-member/per-equipment cooldown wording in the revised FR-003 in Part 1 (pages 39–40) for the current prototype; the original report remains a historical baseline.
+The team subsequently accepted the session-based nudge refactor. The current rule supersedes the equipment-wide decision recorded on 8 October 2026: a five-minute cooldown belongs to the pair `(SessionId, RequestedBy)`. GQ-04 is an intentional business-policy choice; code, tests and this documentation describe the current rule.
 
-The goal is to protect the current equipment user from repeated nudges by successive queued members. Only the front member may nudge, and all members use the same last-successful-nudge timestamp for that equipment.
-
-- A successful nudge starts the equipment's five-minute cooldown. Another nudge is allowed at or after five minutes from that successful request.
+- Only the front queued member may nudge an active session; a member cannot nudge their own session.
+- A successful nudge starts that requester's five-minute cooldown for that session. Another nudge is allowed at or after five minutes from the accepted request.
 - Invalid requests and rejected attempts do not start, restart or extend the cooldown.
-- Leaving, rejoining, replacing the front member, session handover and queue cancellation retain the equipment timestamp. These actions cannot bypass the cooldown.
-- Each equipment item has its own independent cooldown. A nudge on one machine does not block another machine.
-- All pages and signed-in accounts share one GymSession and QueueService, so account switching retains the cooldown. The desktop app now persists that state, including cooldowns, across restarts by default. Closing an explicitly disabled-persistence demo still resets its in-memory state; see [local JSON persistence](JSON-Persistence.md).
+- Leaving and rejoining does not reset the same requester's cooldown while that session remains active. A replacement front member has an independent cooldown.
+- A new session has an independent cooldown, including when it uses the same equipment. Completed-session cooldown entries are removed.
+- Only one response request may be open for a session at a time. The request is withdrawn if the target session ends or the requester leaves the queue.
+- All screens and signed-in accounts share one GymSession and NudgeService. [Local JSON persistence](JSON-Persistence.md) retains current-schema cooldowns across restarts, including after a response or the requester leaving. Explicitly disabled persistence retains state only for that run.
 
-The response deadline is a separate timer managed by GymSession; it does not control the cooldown. The current desktop footer says "One nudge per machine every 5 minutes", and rejected attempts report the same equipment-wide restriction. The separate GQ-08 issue concerns button eligibility and stale feedback; the service still enforces this policy.
+The response deadline is separate from the cooldown: the current user has two minutes to answer. This agrees with the submitted revised FR-003 (Part 1, page 39); historical AC-03 (page 37) and the repository's report copy say one minute. The original reports remain historical baselines, and this record does not claim lecturer approval of a requirements change.
 
-This policy is suitable for the current single-instance desktop prototype: it limits interruptions, preserves FIFO eligibility, and avoids a new front member immediately repeating a recent nudge. The shared cooldown is an intentional trade-off even when that member has not personally nudged before. [Local JSON persistence](JSON-Persistence.md) now retains the cooldown across restarts. Coordination across separate app instances remains outside this prototype's guarantees; one process holds the writer lease for each file.
+This policy limits repeated nudges from the same waiting member while preserving FIFO eligibility and allowing a newly waiting member to ask about the current session. It is appropriate for the single-instance prototype. Separate app instances do not synchronize their queues; one process holds the writer lease for each JSON file.
 
-`SendNudge_NewFrontMember_SharesEquipmentCooldown` verifies the coordinator workflow, and EquipmentNudgeCooldownTests verifies exact clock boundaries, rejected attempts and queue/session transitions. Existing original queue tests cover independent equipment cooldowns and front-member eligibility.
+`NudgeCooldownTests` verifies exact clock boundaries, a new session, a replacement requester, rejected attempts, and leaving/rejoining. `NudgePersistenceTests` verifies restored cooldowns and pending response deadlines. `QueueService.SendNudge` checks front-member eligibility; NudgeService enforces the cooldown and response-request lifecycle.
+
+## Staff avatar policy (GQ-09)
+
+On 11 October 2026, the team confirmed that the staff avatar intentionally returns to the staff dashboard/About view. Staff navigation remains restricted to that dashboard; a separate staff profile screen is outside the current prototype scope. Member avatars still open the member Profile screen. `ProfileNavigationPolicyUiTests` records both role-specific behaviours. This is a product-policy disposition, not lecturer approval or a new administrator-role implementation.
 
 ## Integration setup
 
 Sample equipment and member data are included for development and testing. Use new GymSession(seed: false) to start without seeded sessions or reports; equipment and member data remain available.
 
-MainWindow now creates one ShellViewModel and GymSession shared by all screens. Its one-second UI timer calls Tick and stops when the window closes. The Equipment screen links to details, sessions, queues, and reports; Profile provides demo account selection and staff review access. Coordinator actions run on the UI thread. This layer does not fix concurrent access to the original QueueService.
+MainWindow now creates one ShellViewModel and GymSession shared by all screens. Its one-second UI timer calls Tick and stops when the window closes. The Equipment screen links to details, sessions, queues, and reports. Member Profile provides logout and demo-time controls; account switching uses logout/login, and staff review is on the staff dashboard. Coordinator actions run on the UI thread. This layer does not fix concurrent access to the original QueueService.
 
 - Create one GymSession instance shared by all screens.
 - Call Tick() regularly from the UI timer.

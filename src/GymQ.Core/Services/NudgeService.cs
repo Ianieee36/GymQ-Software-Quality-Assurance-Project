@@ -5,16 +5,18 @@ namespace GymQ.Services;
 ///
 /// Design rules:
 /// - Who may nudge is decided by the queue: only the member at the front of the queue
-///   (QueueService.SendNudge also enforces the agreed GQ-04 per-equipment cooldown).
+///   (QueueService.SendNudge checks eligibility; this service owns the cooldown).
 /// - What is nudged is one session, identified by SessionId, never "the machine".
+/// - The five-minute cooldown belongs to the (SessionId, RequestedBy) pair. A new
+///   session or a different requester has an independent cooldown.
 /// - A nudge only stays open while both sides still exist: the target session is active
 ///   and the requester is still queued for that machine. Otherwise it is withdrawn.
 /// </summary>
 public sealed partial class NudgeService
 {
-    /// <summary>How long the target has to answer. FR-003 states 1 minute; the team currently uses 2.</summary>
+    /// <summary>Two-minute response deadline, matching submitted revised FR-003; older AC-03 says one minute.</summary>
     public static readonly TimeSpan ResponseWindow = TimeSpan.FromMinutes(2);
-     /// <summary>How often the same nudger may nudge the same session.</summary>
+    /// <summary>How often the same nudger may nudge the same session.</summary>
     public static readonly TimeSpan CooldownWindow = TimeSpan.FromMinutes(5);
 
     private readonly SessionService _sessions;

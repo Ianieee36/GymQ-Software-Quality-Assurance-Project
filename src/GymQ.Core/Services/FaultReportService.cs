@@ -151,7 +151,8 @@ namespace GymQ.Services
             // FR-007: mark the equipment unavailable
             if (equipment != null)
             {
-                UpdateEquipmentStatus(report.EquipmentId, EquipmentStatus.Unavailable);
+                // Use the validated instance so a second lookup cannot fail after review metadata is committed.
+                equipment.Status = EquipmentStatus.Unavailable;
             }
         }
 

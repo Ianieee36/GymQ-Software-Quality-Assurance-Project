@@ -22,7 +22,7 @@
       <TextBlock Name="LoginMessage" Text="{Binding Message}" Foreground="#FFB7C5" FontSize="12"/>
     </Border>
     <Button Content="LOG IN" Classes="primary" Command="{Binding LogIn}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
-    <TextBlock Text="Demo accounts reset when the app closes." Classes="muted" FontSize="12" HorizontalAlignment="Center"/>
+    <TextBlock Text="Demo accounts are for prototype testing." Classes="muted" FontSize="12" HorizontalAlignment="Center"/>
     
     <!-- Demo account buttons -->
     <StackPanel Spacing="6">

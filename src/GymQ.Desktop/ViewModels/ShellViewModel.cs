@@ -152,7 +152,7 @@ public sealed class ShellViewModel : ObservableObject
     private string ResolvePage(string requested)
     {
         if (_current == null) return "login";                        // logged out: login only
-        if (_current.IsStaff) return "staff";                          // staff: staff dashboard only
+        if (_current.IsStaff) return "staff";                          // GQ-09 policy: staff avatar returns to the staff dashboard/About view.
         return requested is "staff" or "login" ? "equipment" : requested; // members: never staff
     }
 

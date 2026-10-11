@@ -4,7 +4,7 @@ namespace GymQ.Tests;
 public class DemoTimeTests
 {
     [TestMethod]
-    public void OneMinute_EndsUnansweredNudge_AndOffersNextTurn()
+    public void TwoMinutes_EndsUnansweredNudge_AndOffersNextTurn()
     {
         var g = new GymSession(); g.Join("E2", g.Members[0]); g.SendNudge("E2", g.Members[0]);
         g.AdvanceDemoTime(2);

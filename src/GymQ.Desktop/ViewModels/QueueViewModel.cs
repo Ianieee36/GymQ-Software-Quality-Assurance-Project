@@ -37,12 +37,17 @@ public sealed class QueueViewModel : PageViewModel
     public ActionCommand Nudge { get; }
     public ActionCommand Leave { get; }
     private string _feedback = "";
+    private NudgeNotice? _feedbackNudge;
+    private static string PendingNudgeFeedback => $"Nudge sent. The current user has {(int)NudgeService.ResponseWindow.TotalSeconds} seconds to respond.";
     public string Feedback { get => _feedback; set => Set(ref _feedback, value); }
     public QueueViewModel(ShellViewModel shell, string id) : base(shell)
     {
         EquipmentId = id;
-                Nudge = new(() => shell.Perform(() => shell.Gym.SendNudge(id, shell.Current),
-            () => Feedback = $"Nudge sent. The current user has {(int)NudgeService.ResponseWindow.TotalSeconds} seconds to respond."));
+        Nudge = new(() => shell.Perform(() => shell.Gym.SendNudge(id, shell.Current), () =>
+        {
+            _feedbackNudge = shell.Gym.Nudges.FirstOrDefault(n => n.EquipmentId == id && n.RequestedBy == shell.Current.MemberId);
+            Feedback = _feedbackNudge == null ? "" : PendingNudgeFeedback;
+        }));
         Leave = new(() => shell.Perform(() => shell.Gym.Leave(id, shell.Current), () => shell.Navigate("equipment")));
         Refresh();
     }
@@ -52,7 +57,16 @@ public sealed class QueueViewModel : PageViewModel
         foreach (var entry in Shell.Gym.Queue.ReadQueue(EquipmentId)) People.Add(new(++i, entry.MemberId == Shell.Current.MemberId ? "You" : Shell.Gym.MemberName(entry.MemberId), entry.MemberId == Shell.Current.MemberId));
         Notify(nameof(Position)); Notify(nameof(CurrentUser)); Notify(nameof(Initial)); Notify(nameof(CanNudge)); Tick();
     }
-        public override void Tick() { Notify(nameof(CurrentDuration)); Notify(nameof(CanNudge)); Notify(nameof(NudgeHint)); }
+    public override void Tick()
+    {
+        // This message belongs to the accepted request, not a later nudge on the same session.
+        if (_feedbackNudge is { } notice && !ReferenceEquals(Shell.Gym.Nudging.ReadFor(notice.SessionId), notice))
+        {
+            _feedbackNudge = null;
+            if (Feedback == PendingNudgeFeedback) Feedback = "";
+        }
+        Notify(nameof(CurrentDuration)); Notify(nameof(CanNudge)); Notify(nameof(NudgeHint));
+    }
 }
 public record QueuePerson(int Number, string Name, bool IsMe)
 {

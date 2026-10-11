@@ -31,7 +31,7 @@ public sealed class SessionViewModel : PageViewModel
     }
     public override void Tick() 
     { 
-        Notify(nameof(IsActive)); Notify(nameof(Headline)); 
+        Notify(nameof(IsActive)); Notify(nameof(Title)); Notify(nameof(Headline));
         Notify(nameof(Duration)); Notify(nameof(Remaining)); 
     }
     public override void Refresh() => Tick();
