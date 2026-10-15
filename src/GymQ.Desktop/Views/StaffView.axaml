@@ -22,6 +22,8 @@
                     <TextBlock Text="{Binding Card.Status}" Foreground="#151517" FontSize="8" FontWeight="Bold"/>
                   </Border>
                 </Grid>
+                <Button Content="Mark as available" Classes="primary" HorizontalAlignment="Stretch"
+                        IsVisible="{Binding IsOutOfService}" Command="{Binding ReturnToService}"/>
               </StackPanel>
             </Border>
           </DataTemplate>

@@ -12,14 +12,16 @@ public sealed partial class GymSession
 {
     public Dictionary<string, Equipment> Equipment { get; } = new()
     {
-        ["E1"] = new("E1", "Treadmill #3"), ["E2"] = new("E2", "Squat Rack #2"),
-        ["E3"] = new("E3", "Elliptical #1"), ["E4"] = new("E4", "Recumbent Bike")
+        ["E1"] = new("E1", "Treadmill #3"),
+        ["E2"] = new("E2", "Squat Rack #2"),
+        ["E3"] = new("E3", "Elliptical #1"),
+        ["E4"] = new("E4", "Recumbent Bike")
     };
     public List<Member> Members { get; } = new()
     {
-        new("M001","Lorenz_Soriano", "LS123", "Lorenz Soriano", false), 
+        new("M001","Lorenz_Soriano", "LS123", "Lorenz Soriano", false),
         new("M002","Christian_Cantos", "CC123", "Christian Cantos", false),
-        new("M003","Jayden_Marsh", "JM123", "Jayden Marsh", false), 
+        new("M003","Jayden_Marsh", "JM123", "Jayden Marsh", false),
         new("S001","Gym_Staff", "GS123", "Gym Staff", true)
     };
 
@@ -152,22 +154,34 @@ public sealed partial class GymSession
         {
             foreach (var memberId in Queue.CancelQueue(equipmentId))
                 _queueCancellations.Add(new(memberId, equipmentId, Equipment[equipmentId].Name));
-            
+
             Nudging.WithdrawInvalid(); // nobody is waiting any more, so the nudge is withdrawn
         }
         Changed?.Invoke();
     }
 
+    // Staff mark an out-of-service machine as fixed.
+    public void ReturnToService(string equipmentId, Member staff)
+    {
+        Faults.ReturnToService(equipmentId, staff);
+        // A member may still be on the machine from before it was marked out of service.
+        // Their session continues, so the machine shows as In use until they finish.
+        if (Sessions.ReadActiveSession(equipmentId) != null)
+            Equipment[equipmentId].Status = EquipmentStatus.InUse;
+        OfferNext(equipmentId);
+        Changed?.Invoke();
+    }
+
     private void RequireCurrentUser(string id, Member member)
-    { 
-        if (Sessions.ReadActiveSession(id, member.MemberId) == null) 
-            throw new UnauthorizedAccessException("Only the current equipment user can end this session."); 
+    {
+        if (Sessions.ReadActiveSession(id, member.MemberId) == null)
+            throw new UnauthorizedAccessException("Only the current equipment user can end this session.");
     }
 
     private void OfferNext(string equipmentId)
-    { 
-        if (Equipment[equipmentId].Status == EquipmentStatus.Available) 
-            Queue.NotifyNextInQueue(equipmentId); 
+    {
+        if (Equipment[equipmentId].Status == EquipmentStatus.Available)
+            Queue.NotifyNextInQueue(equipmentId);
     }
 
     // This method is called by the desktop shell on a timer to process timeouts and expired nudges.
@@ -179,7 +193,7 @@ public sealed partial class GymSession
         {
             // Every remaining nudge belongs to the machine's active session (checked above).
             Sessions.EndSession(n.EquipmentId, SessionEndReason.NudgeTimeout);
-            OfferNext(n.EquipmentId); 
+            OfferNext(n.EquipmentId);
             changed = true;
         }
 
@@ -189,9 +203,9 @@ public sealed partial class GymSession
             var wasActive = Sessions.ReadActiveSession(e.EquipmentId) != null;
             Sessions.EnforceMaxSessionDuration(e.EquipmentId);
             if (wasActive && Sessions.ReadActiveSession(e.EquipmentId) == null)
-            { 
-                OfferNext(e.EquipmentId); 
-                changed = true; 
+            {
+                OfferNext(e.EquipmentId);
+                changed = true;
             }
 
             foreach (var entry in Queue.ReadQueue(e.EquipmentId).Where(q => q.NotifiedAt.HasValue))
