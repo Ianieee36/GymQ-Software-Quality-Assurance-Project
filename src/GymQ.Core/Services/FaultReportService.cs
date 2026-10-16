@@ -55,7 +55,7 @@ namespace GymQ.Services
 
         private readonly TimeProvider _clock;
 
-        public FaultReportService (IEquipmentRepository equipmentRepository, TimeProvider? clock = null)
+        public FaultReportService(IEquipmentRepository equipmentRepository, TimeProvider? clock = null)
         {
             _clock = clock ?? TimeProvider.System;
             // Validate that the equipment repository is not null
@@ -83,7 +83,7 @@ namespace GymQ.Services
             }
 
             // Rejects reports for unknown equipment at submission
-            if(_equipmentRepository.GetById(equipmentId) == null)
+            if (_equipmentRepository.GetById(equipmentId) == null)
             {
                 throw new ArgumentException($"No equipment found with ID '{equipmentId}'.", nameof(equipmentId));
             }
@@ -176,6 +176,36 @@ namespace GymQ.Services
 
             // Update the equipment status
             equipment.Status = newStatus;
+        }
+
+        // Staff mark an out-of-service machine as fixed once maintenance is done.
+        // Only staff can do this, and only for equipment that is currently Unavailable.
+        public void ReturnToService(string equipmentId, Member staff)
+        {
+            if (staff == null)
+            {
+                throw new ArgumentNullException(nameof(staff));
+            }
+
+            if (!staff.IsStaff)
+            {
+                throw new UnauthorizedAccessException("Only staff members can return equipment to service.");
+            }
+
+            if (string.IsNullOrWhiteSpace(equipmentId))
+            {
+                throw new ArgumentException("Equipment ID is required.", nameof(equipmentId));
+            }
+
+            var equipment = _equipmentRepository.GetById(equipmentId)
+                ?? throw new ArgumentException($"No equipment found with ID '{equipmentId}'.", nameof(equipmentId));
+
+            if (equipment.Status != EquipmentStatus.Unavailable)
+            {
+                throw new InvalidOperationException($"{equipment.Name} is not out of service.");
+            }
+
+            equipment.Status = EquipmentStatus.Available;
         }
 
         // Helper for staff-facing review screens: returns all reports still awaiting review.

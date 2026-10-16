@@ -3,6 +3,7 @@ using GymQ.Desktop.Presentation;
 using GymQ.Services;
 using GymQ.Models;
 namespace GymQ.Desktop.ViewModels;
+
 public sealed class ProfileViewModel : PageViewModel
 {
     // Account details for the signed-in member. Switching accounts is done by logging out.
@@ -44,8 +45,11 @@ public sealed class StaffViewModel : PageViewModel
 }
 public sealed class StaffReport
 {
-    public string Name { get; } public string Description { get; } public string Meta { get; }
-    public ActionCommand Confirm { get; } public ActionCommand Reject { get; }
+    public string Name { get; }
+    public string Description { get; }
+    public string Meta { get; }
+    public ActionCommand Confirm { get; }
+    public ActionCommand Reject { get; }
     public StaffReport(ShellViewModel shell, FaultReport r)
     {
         Name = shell.Gym.Equipment[r.EquipmentId].Name; Description = r.Description; Meta = r.ReportId + " · " + shell.Gym.MemberName(r.SubmittedByMemberId);
@@ -56,6 +60,12 @@ public sealed class StaffReport
 public sealed class StaffEquipment
 {
     public EquipmentCardViewModel Card { get; }
+    public bool IsOutOfService { get; }
+    public ActionCommand ReturnToService { get; }
     public StaffEquipment(ShellViewModel shell, Equipment e)
-    { Card = new(shell, e); }
+    {
+        Card = new(shell, e);
+        IsOutOfService = e.Status == EquipmentStatus.Unavailable;
+        ReturnToService = new(() => shell.Perform(() => shell.Gym.ReturnToService(e.EquipmentId, shell.Current)));
+    }
 }
