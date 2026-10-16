@@ -58,6 +58,27 @@ public class ReturnToServiceTests
         Assert.AreEqual(EquipmentStatus.Available, gym.Equipment["E2"].Status);
     }
 
+    [TestMethod]
+    public void ReturnToService_UnknownEquipment_IsRejected()
+    {
+        var gym = new GymSession(false);
+
+        // Check that returning unknown equipment to service is rejected
+        Assert.ThrowsExactly<ArgumentException>(() => gym.ReturnToService("E99", gym.FindMember("S001")));
+    }
+
+    [TestMethod]
+    public void Member_CannotReturnEquipmentToService()
+    {
+        var gym = new GymSession(false);
+        ConfirmFault(gym, "E1");
+
+        // Check that a member cannot return equipment to service
+        Assert.ThrowsExactly<UnauthorizedAccessException>(() => gym.ReturnToService("E1", gym.FindMember("M001")));
+
+        // Check that the equipment is still marked as unavailable
+        Assert.AreEqual(EquipmentStatus.Unavailable, gym.Equipment["E1"].Status);
+    }
 
     // Submit a fault report and have it confirmed by staff
     private static void ConfirmFault(GymSession gym, string equipmentId)
