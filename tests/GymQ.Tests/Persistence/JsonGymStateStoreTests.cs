@@ -243,7 +243,12 @@ public sealed class JsonGymStateStoreTests
         var original = File.ReadAllBytes(directory.StatePath);
         Directory.CreateDirectory(directory.StatePath + ".bak");
 
-        Assert.ThrowsExactly<IOException>(() => store.Save(EmptyState(Now.AddMinutes(1))));
+        // A folder where the backup file should go makes the backup write fail.
+        // Linux and macOS report this as IOException; Windows reports UnauthorizedAccessException.
+        // GymSession.SaveState handles both, so either is a correct failure here.
+        var error = Assert.Throws<Exception>(() => store.Save(EmptyState(Now.AddMinutes(1))));
+        Assert.IsTrue(error is IOException or UnauthorizedAccessException,
+            $"Expected IOException or UnauthorizedAccessException, got {error.GetType().Name}.");
         CollectionAssert.AreEqual(original, File.ReadAllBytes(directory.StatePath));
         Assert.AreEqual(Now, store.Load()!.SavedAtUtc);
         Assert.IsEmpty(Directory.GetFiles(directory.Path, "*.tmp"));
