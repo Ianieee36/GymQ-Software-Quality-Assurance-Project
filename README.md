@@ -41,3 +41,7 @@ dotnet run --project src/GymQ.Desktop/GymQ.Desktop.csproj
 - `docs`: project documentation.
 
 `bin`, `obj`, and `TestResults` are generated and ignored by Git. Preserve any test results needed as assessment evidence separately.
+
+## Supporting test evidence
+
+The [supporting evidence package](docs/evidence/README.md) contains the recorded test results, manual-check notes, screenshots and defect records referenced in the final report.
