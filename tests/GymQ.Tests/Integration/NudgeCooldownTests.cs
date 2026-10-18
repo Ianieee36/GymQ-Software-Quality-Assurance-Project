@@ -12,14 +12,16 @@ public sealed class NudgeCooldownTests
     [TestMethod]
     public void SameNudgerSameSession_BlockedUntilFiveMinutes_ThenAllowed()
     {
-        var gym = Gym(out var clock);
+        var gym = Gym(out var clock); // GymSession(false) with a fake clock
         gym.SendNudge("E1", M(gym, "M001"));
         gym.Respond("E1", M(gym, "M002"), stillUsing: true);
 
+        // One tick before the 5-minute cooldown ends: still blocked
         clock.Advance(NudgeService.CooldownWindow - TimeSpan.FromTicks(1));
         var ex = Assert.ThrowsExactly<InvalidOperationException>(() => gym.SendNudge("E1", M(gym, "M001")));
         Assert.StartsWith("You can nudge this member again in", ex.Message);
 
+        // Exactly at the time limit: allowed
         clock.Advance(TimeSpan.FromTicks(1));
         gym.SendNudge("E1", M(gym, "M001"));
         Assert.HasCount(1, gym.Nudges);
